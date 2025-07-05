@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LOGIN_URL = 'https://backend-calorieai.netlify.app/.netlify/functions/login';
+const LOGIN_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/login';
 
 export default function LoginScreen({ navigation }) {
   const [role, setRole] = useState('member');

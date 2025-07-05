@@ -9,7 +9,7 @@ export default function CoachListScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://backend-calorieai.netlify.app/.netlify/functions/get-coaches')
+    fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/get-coaches')
       .then(res => res.json())
       .then(data => {
         setCoaches(data);

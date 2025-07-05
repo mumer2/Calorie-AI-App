@@ -12,37 +12,37 @@ import Toast from "react-native-toast-message";
 import LoginScreen from "./screens/LoginScreen";
 import SignupScreen from "./screens/SignupScreen";
 import HomeScreen from "./screens/HomeScreen";
+import FitnessScreen from "./screens/FitnessScreen";
+import DietPlanScreen from "./screens/DietPlanScreen";
+import ExerciseScreen from "./screens/ExerciseScreen";
+import SubscribeScreen from "./screens/SubscribeScreen";
+import StepCounterScreen from "./screens/StepCounterScreen";
 import CheckInScreen from "./screens/CheckInScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import SettingsScreen from "./screens/SettingsScreen";
-// import FitnessScreen from "./screens/FitnessScreen";
-// import DietPlanScreen from "./screens/DietPlanScreen";
-// import ExerciseScreen from "./screens/ExerciseScreen";
-// import SubscribeScreen from "./screens/SubscribeScreen";
-// import StepCounterScreen from "./screens/StepCounterScreen";
-// import ReminderScreen from "./screens/ReminderScreen";
-// import StepsHistoryScreen from "./screens/StepsHistoryScreen";
-// import TrainingScreen from "./screens/TrainingScreen";
-// import TrainingVideoScreen from "./screens/TrainingVideoScreen";
-// import TrainingDetailScreen from "./screens/TrainingDetailScreen";
-// import ProgressReportScreen from "./screens/ProgressReportScreen";
-// import JitsiScreen from "./screens/JitsiScreen";
-// import AIChatScreen from "./screens/AIChatScreen";
-// import ReviewRequestsScreen from "./screens/ReviewRequestsScreen";
+import ReminderScreen from "./screens/ReminderScreen";
+import StepsHistoryScreen from "./screens/StepsHistoryScreen";
+import TrainingScreen from "./screens/TrainingScreen";
+import TrainingVideoScreen from "./screens/TrainingVideoScreen";
+import TrainingDetailScreen from "./screens/TrainingDetailScreen";
+import ProgressReportScreen from "./screens/ProgressReportScreen";
+import JitsiScreen from "./screens/JitsiScreen";
+import AIChatScreen from "./screens/AIChatScreen";
+import ReviewRequestsScreen from "./screens/ReviewRequestsScreen";
 import CoachHomeScreen from "./screens/CoachHomeScreen";
-// import CoachListScreen from "./screens/CoachListScreen";
-// import CoachProfileScreen from "./screens/CoachProfileScreen";
-// import SendRequestScreen from "./screens/SendRequestScreen";
-// import CoachVideoListScreen from "./screens/CoachVideoListScreen";
-// import CoachLiveScreen from "./screens/CoachLiveScreen";
-// import CoinsRewardScreen from "./screens/CoinsRewardScreen";
-// import RedeemScreen from "./screens/RedeemScreen";
-// import WeChatPayScreen from "./screens/WeChatPayScreen";
-// import SubscribeWithCoins from "./screens/SubscribeWithCoins";
-// import SubscriptionSuccessScreen from "./screens/SubscriptionSuccessScreen";
+import CoachListScreen from "./screens/CoachListScreen";
+import CoachProfileScreen from "./screens/CoachProfileScreen";
+import SendRequestScreen from "./screens/SendRequestScreen";
+import CoachVideoListScreen from "./screens/CoachVideoListScreen";
+import CoachLiveScreen from "./screens/CoachLiveScreen";
+import CoinsRewardScreen from "./screens/CoinsRewardScreen";
+import RedeemScreen from "./screens/RedeemScreen";
+import WeChatPayScreen from "./screens/WeChatPayScreen";
+import SubscribeWithCoins from "./screens/SubscribeWithCoins";
+import SubscriptionSuccessScreen from "./screens/SubscriptionSuccessScreen";
 import { navigationRef } from "./screens/NavigationService";
-// import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
-// import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -121,7 +121,7 @@ useEffect(() => {
           {/* Authenticated User Screens */}
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="CoachHome" component={CoachHomeScreen} />
-          {/* <Stack.Screen name="Fitness" component={FitnessScreen} />
+          <Stack.Screen name="Fitness" component={FitnessScreen} />
           <Stack.Screen name="Diet" component={DietPlanScreen} />
           <Stack.Screen name="Exercise" component={ExerciseScreen} />
           <Stack.Screen name="Subscribe" component={SubscribeScreen} />
@@ -155,7 +155,7 @@ useEffect(() => {
           <Stack.Screen name="SubwithCoins" component={SubscribeWithCoins} />
           <Stack.Screen name="SubscriptionSuccess" component={SubscriptionSuccessScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} /> */}
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
 
 
         </Stack.Navigator>

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SIGNUP_URL = 'https://backend-calorieai.netlify.app/.netlify/functions/signup';
+const SIGNUP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/signup';
 
 export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');

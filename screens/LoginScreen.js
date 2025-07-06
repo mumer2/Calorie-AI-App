@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -12,8 +12,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 
 const LOGIN_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/login';
+const SAVE_PUSH_TOKEN_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/savePushToken'; // 👈 create this backend
 
 export default function LoginScreen({ navigation }) {
   const [role, setRole] = useState('member');
@@ -44,13 +47,15 @@ export default function LoginScreen({ navigation }) {
       const data = await response.json();
 
       if (response.ok && data.token && data.user) {
-        // Store user info locally
         await AsyncStorage.setItem('authToken', data.token);
         await AsyncStorage.setItem('userId', data.user._id || '');
         await AsyncStorage.setItem('userName', data.user.name || '');
         await AsyncStorage.setItem('userRole', data.role);
         await AsyncStorage.setItem('userPoints', (data.user.points || 0).toString());
         await AsyncStorage.setItem('referralCode', data.user.referralCode || '');
+
+        // ✅ Register push token and send to backend
+        await registerPushToken(data.user._id);
 
         // Navigate to appropriate home
         if (data.role === 'member') {
@@ -77,6 +82,33 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  // ✅ Function to register and save Expo push token
+  const registerPushToken = async (userId) => {
+    try {
+      if (!Device.isDevice) return;
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') return;
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+
+      await fetch(SAVE_PUSH_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, expoPushToken: token }),
+      });
+    } catch (err) {
+      console.error('Push token registration failed:', err.message);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -88,14 +120,10 @@ export default function LoginScreen({ navigation }) {
 
           <View style={styles.roleSwitch}>
             <TouchableOpacity onPress={() => setRole('member')}>
-              <Text style={role === 'member' ? styles.selected : styles.unselected}>
-                Member
-              </Text>
+              <Text style={role === 'member' ? styles.selected : styles.unselected}>Member</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setRole('coach')}>
-              <Text style={role === 'coach' ? styles.selected : styles.unselected}>
-                Coach
-              </Text>
+              <Text style={role === 'coach' ? styles.selected : styles.unselected}>Coach</Text>
             </TouchableOpacity>
           </View>
 
@@ -119,28 +147,22 @@ export default function LoginScreen({ navigation }) {
           />
 
           <View style={styles.forgotContainer}>
-  <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-    <Text style={styles.forgotText}>Forgot Password?</Text>
-  </TouchableOpacity>
-</View>
+            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={[styles.button, loading && { opacity: 0.7 }]}
             onPress={handleLogin}
             disabled={loading}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text style={styles.link}>Don't have an account? Sign up</Text>
           </TouchableOpacity>
-        
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -148,15 +170,8 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: '#f0f8ff',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
+  wrapper: { flex: 1, backgroundColor: '#f0f8ff' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   card: {
     backgroundColor: '#fff',
     padding: 24,
@@ -167,18 +182,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#0e4d92',
-  },
-  roleSwitch: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24, textAlign: 'center', color: '#0e4d92' },
+  roleSwitch: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   selected: {
     color: '#0e4d92',
     fontWeight: 'bold',
@@ -186,11 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textDecorationLine: 'underline',
   },
-  unselected: {
-    color: 'gray',
-    marginHorizontal: 10,
-    fontSize: 16,
-  },
+  unselected: { color: 'gray', marginHorizontal: 10, fontSize: 16 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
@@ -206,26 +207,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  link: {
-    marginTop: 20,
-    color: '#0e4d92',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-forgotContainer: {
-  alignItems: 'flex-end',
-  marginBottom: 16,
-},
-
-forgotText: {
-  color: '#0e4d92',
-  fontSize: 14,
-  textDecorationLine: 'underline',
-},
-
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  link: { marginTop: 20, color: '#0e4d92', fontSize: 14, textAlign: 'center' },
+  forgotContainer: { alignItems: 'flex-end', marginBottom: 16 },
+  forgotText: { color: '#0e4d92', fontSize: 14, textDecorationLine: 'underline' },
 });

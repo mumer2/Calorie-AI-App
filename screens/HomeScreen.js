@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useContext } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { Pedometer } from "expo-sensors";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import StepCounterScreen from "./StepCounterScreen";
+import NotificationIcon from "../components/NotificationIcon";
+import { NotificationContext } from "../contexts/NotificationContext";
 
 const STEP_GOAL = 10000;
 const { width } = Dimensions.get("window");
@@ -29,6 +31,8 @@ export default function HomeScreen({ navigation }) {
   const [showSubscriptionMenu, setShowSubscriptionMenu] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const appState = useRef(AppState.currentState);
+const context = useContext(NotificationContext);
+const unreadCount = context?.unreadCount || 0;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -129,14 +133,13 @@ export default function HomeScreen({ navigation }) {
     );
   };
   useEffect(() => {
-  const unsubscribe = navigation.addListener('focus', async () => {
-    const status = await AsyncStorage.getItem("isSubscribed");
-    setIsSubscribed(status === "true");
-  });
+    const unsubscribe = navigation.addListener("focus", async () => {
+      const status = await AsyncStorage.getItem("isSubscribed");
+      setIsSubscribed(status === "true");
+    });
 
-  return unsubscribe;
-}, [navigation]);
-
+    return unsubscribe;
+  }, [navigation]);
 
   const collections = [
     {
@@ -194,6 +197,10 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.topBar}>
           <Text style={styles.topBarText}>👋 Hi, {name || "Guest"}</Text>
           <View style={styles.topRightControls}>
+            <NotificationIcon
+              count={unreadCount}
+              onPress={() => navigation.navigate("Notifications")}
+            />
             <TouchableOpacity
               style={styles.coinTab}
               onPress={() => navigation.navigate("CoinsReward")}
@@ -276,7 +283,7 @@ export default function HomeScreen({ navigation }) {
           </View> */}
 
           <View style={styles.row}>
-            {collections.slice(2,4).map((item, index) => (
+            {collections.slice(2, 4).map((item, index) => (
               <TouchableOpacity
                 key={index}
                 style={[

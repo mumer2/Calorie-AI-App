@@ -80,21 +80,10 @@ export default function App() {
   Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
-    shouldPlaySound: false,
+    shouldPlaySound: true,
     shouldSetBadge: true,
   }),
 });
-
-useEffect(() => {
-  const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-    const screen = response.notification.request.content.data?.screen;
-    if (screen === 'Replies') {
-      navigation.navigate('CoachList'); // or navigate to specific coach
-    }
-  });
-
-  return () => subscription.remove();
-}, []);
 
   useEffect(() => {
     const checkAuth = async () => {

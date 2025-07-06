@@ -6,7 +6,7 @@ export default function WeChatPayScreen() {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
-    fetch('https://backend-calorieai.netlify.app/.netlify/functions/wechat-pay', {
+    fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/wechat-pay', {
       method: 'POST',
       body: JSON.stringify({ total_fee: 100 }),
     })

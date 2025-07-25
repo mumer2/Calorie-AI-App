@@ -49,6 +49,8 @@ import SubscriptionSuccessScreen from "./screens/SubscriptionSuccessScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
+import SubscribeWithApple from "./screens/SubscribeWithApple";
+import SubscribeWithPaypal from "./screens/SubscribeWithPaypal";
 
 // 🔔 Push Notification Setup
 async function registerForPushNotificationsAsync() {
@@ -190,6 +192,9 @@ function AppWithNotifications({ userToken, userRole }) {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="ApplePay" component={SubscribeWithApple} />
+        <Stack.Screen name="PayPal" component={SubscribeWithPaypal} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

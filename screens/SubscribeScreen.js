@@ -22,6 +22,7 @@ export default function SubscribeScreen({ navigation }) {
   return (
     <LinearGradient colors={['#e6f0ff', '#f8fcff']} style={styles.gradient}>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+
         <Text style={styles.title}>✨ Choose Your Subscription</Text>
 
         <TouchableOpacity
@@ -37,6 +38,21 @@ export default function SubscribeScreen({ navigation }) {
         >
           <Text style={styles.buttonText}>Subscribe with WeChat Pay 💳</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.buttonApple}
+          onPress={() => navigation.navigate('ApplePay')}
+        >
+          <Text style={styles.buttonText}>Subscribe with Apple Pay 💵</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.buttonPaypal}
+          onPress={() => navigation.navigate('PayPal')}
+        >
+          <Text style={styles.buttonText}>Subscribe with PayPal 💵</Text>
+        </TouchableOpacity>
+
       </Animated.View>
     </LinearGradient>
   );
@@ -67,6 +83,20 @@ const styles = StyleSheet.create({
   },
   buttonWeChat: {
     backgroundColor: '#00c300',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  buttonApple: {
+    backgroundColor: '#000',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  buttonPaypal: {
+    backgroundColor: '#0070BA',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

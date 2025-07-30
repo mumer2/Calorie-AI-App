@@ -56,9 +56,30 @@ export default function FitnessScreen() {
 
         <Text style={styles.title}>🧠 Health Metrics</Text>
         <View style={styles.inputGroup}>
-          <TextInput placeholder="Age (years)" keyboardType="numeric" style={styles.input} value={age} onChangeText={setAge} />
-          <TextInput placeholder="Height (cm)" keyboardType="numeric" style={styles.input} value={height} onChangeText={setHeight} />
-          <TextInput placeholder="Weight (kg)" keyboardType="numeric" style={styles.input} value={weight} onChangeText={setWeight} />
+          <TextInput
+            placeholder="Age (years)"
+            keyboardType="numeric"
+            style={styles.input}
+            value={age}
+            onChangeText={setAge}
+            placeholderTextColor="#888"
+          />
+          <TextInput
+            placeholder="Height (cm)"
+            keyboardType="numeric"
+            style={styles.input}
+            value={height}
+            onChangeText={setHeight}
+            placeholderTextColor="#888"
+          />
+          <TextInput
+            placeholder="Weight (kg)"
+            keyboardType="numeric"
+            style={styles.input}
+            value={weight}
+            onChangeText={setWeight}
+            placeholderTextColor="#888"
+          />
         </View>
 
         <TouchableOpacity style={styles.button} onPress={calculate}>
@@ -102,17 +123,30 @@ const styles = StyleSheet.create({
   inputGroup: { width: '100%' },
   input: {
     backgroundColor: '#fff',
-    padding: 14, borderRadius:10,
-    marginBottom:12, fontSize:16, borderColor:'#ddd', borderWidth:1
+    color: '#000', // ✅ Ensures typed text is visible
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 12,
+    fontSize: 16,
+    borderColor: '#ddd',
+    borderWidth: 1
   },
   button: {
-    backgroundColor: '#0e4d92', padding: 14,
-    borderRadius:10, width:'100%', alignItems:'center', marginVertical:10
+    backgroundColor: '#0e4d92',
+    padding: 14,
+    borderRadius: 10,
+    width: '100%',
+    alignItems: 'center',
+    marginVertical: 10
   },
   buttonText: { color:'#fff', fontSize:16, fontWeight:'bold' },
   resultBox: {
-    backgroundColor:'#fff', padding:18,
-    width:'100%', borderRadius:12, elevation:2, marginVertical:10
+    backgroundColor:'#fff',
+    padding: 18,
+    width:'100%',
+    borderRadius:12,
+    elevation:2,
+    marginVertical:10
   },
   metric: { fontSize:16, marginBottom:6, color:'#222' },
   suggestion: { fontSize:15, color:'#0d47a1', fontStyle:'italic', marginTop:8 },

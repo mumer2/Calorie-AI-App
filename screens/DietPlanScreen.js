@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
@@ -11,45 +10,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-
-const meals = [
-  {
-    title: '🍳 Breakfast',
-    image: require('../assets/BreakFast.jpeg'),
-    items: [
-      'Oats with milk & fruits - 350 kcal',
-      'Boiled eggs & toast - 300 kcal',
-      'Greek yogurt & nuts - 250 kcal',
-    ],
-  },
-  {
-    title: '🍛 Lunch',
-    image: require('../assets/Lunch.jpeg'),
-    items: [
-      'Grilled chicken with rice & veggies - 500 kcal',
-      'Dal, roti, salad - 450 kcal',
-      'Quinoa with chickpeas - 400 kcal',
-    ],
-  },
-  {
-    title: '🍲 Dinner',
-    image: require('../assets/Dinner.jpeg'),
-    items: [
-      'Stir-fried tofu with brown rice - 450 kcal',
-      'Paneer salad bowl - 400 kcal',
-      'Soup with whole grain bread - 350 kcal',
-    ],
-  },
-  {
-    title: '🍌 Snacks',
-    image: require('../assets/Snacks.jpeg'),
-    items: [
-      'Fruit smoothie - 200 kcal',
-      'Nuts & dry fruits - 150 kcal',
-      'Boiled corn or sprouts - 100 kcal',
-    ],
-  },
-];
+import i18n from '../utils/i18n'; // ✅ Import i18n
 
 export default function DietPlanScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -78,18 +39,59 @@ export default function DietPlanScreen() {
     }).start();
   }, []);
 
+  const meals = [
+    {
+      title: i18n.t('breakfast'),
+      image: require('../assets/BreakFast.jpeg'),
+      items: [
+        i18n.t('oatsMilkFruits'),
+        i18n.t('boiledEggsToast'),
+        i18n.t('greekYogurtNuts'),
+      ],
+    },
+    {
+      title: i18n.t('lunch'),
+      image: require('../assets/Lunch.jpeg'),
+      items: [
+        i18n.t('grilledChickenRiceVeggies'),
+        i18n.t('dalRotiSalad'),
+        i18n.t('quinoaChickpeas'),
+      ],
+    },
+    {
+      title: i18n.t('dinner'),
+      image: require('../assets/Dinner.jpeg'),
+      items: [
+        i18n.t('stirFriedTofuRice'),
+        i18n.t('paneerSaladBowl'),
+        i18n.t('soupWholeGrainBread'),
+      ],
+    },
+    {
+      title: i18n.t('snacks'),
+      image: require('../assets/Snacks.jpeg'),
+      items: [
+        i18n.t('fruitSmoothie'),
+        i18n.t('nutsDryFruits'),
+        i18n.t('boiledCornSprouts'),
+      ],
+    },
+  ];
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0e4d92" />
-        <Text style={{ marginTop: 10, color: '#444' }}>Checking subscription...</Text>
+        <Text style={{ marginTop: 10, color: '#444' }}>
+          {i18n.t('checkingSubscription')}
+        </Text>
       </View>
     );
   }
 
   return (
     <Animated.ScrollView style={[styles.container, { opacity: fadeAnim }]}>
-      <Text style={styles.title}>🥗 Recommended Diet Plan</Text>
+      <Text style={styles.title}>{i18n.t('recommendedDietPlan')}</Text>
       {meals.map((meal, index) => (
         <View key={index} style={styles.card}>
           <View style={styles.mealRow}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../utils/i18n';
+import { LanguageContext } from '../contexts/LanguageContext';
 
 export default function SettingsScreen({ navigation }) {
   const [name, setName] = useState('');
-  const [activeTab, setActiveTab] = useState('menu'); // 'menu' or 'profile'
+  const [activeTab, setActiveTab] = useState('menu');
+  const { language, changeLanguage } = useContext(LanguageContext); // 🌐 Language context
 
   useEffect(() => {
     AsyncStorage.getItem('userName').then((storedName) => {
@@ -21,44 +24,53 @@ export default function SettingsScreen({ navigation }) {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Name cannot be empty');
+      Alert.alert('❌', i18n.t('nameEmpty'));
       return;
     }
 
     await AsyncStorage.setItem('userName', name.trim());
-    Alert.alert('✅ Saved', 'Your name has been updated');
+    Alert.alert('✅', i18n.t('nameUpdated'));
   };
 
- const handleLogout = () => {
-  Alert.alert(
-    'Confirm Logout',
-    'Are you sure you want to log out?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await AsyncStorage.multiRemove(['authToken', 'userRole', 'userName']);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          } catch (error) {
-            Alert.alert('Logout Error', 'Something went wrong.');
-          }
-        },
-      },
-    ],
-    { cancelable: true }
-  );
-};
+  const handleLanguageChange = async (lang) => {
+    await changeLanguage(lang);
+    Alert.alert('✅', `${i18n.t('languageChanged')} ${lang === 'en' ? 'English' : '中文'}`);
+  };
 
+  const handleLogout = () => {
+    Alert.alert(
+      i18n.t('logout'),
+      i18n.t('confirmLogout'),
+      [
+        { text: i18n.t('cancel'), style: 'cancel' },
+        {
+          text: i18n.t('logout'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove([
+                'authToken',
+                'userRole',
+                'userName',
+                'appLanguage',
+              ]);
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              Alert.alert('Logout Error', 'Something went wrong.');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{i18n.t('settings')}</Text>
 
       {activeTab === 'menu' && (
         <View>
@@ -66,35 +78,78 @@ export default function SettingsScreen({ navigation }) {
             style={styles.menuButton}
             onPress={() => setActiveTab('profile')}
           >
-            <Text style={styles.menuText}>👤 Profile</Text>
+            <Text style={styles.menuText}>👤 {i18n.t('profile')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuButton}
             onPress={handleLogout}
           >
-            <Text style={styles.menuText}>🚪 Logout</Text>
+            <Text style={styles.menuText}>🚪 {i18n.t('logout')}</Text>
           </TouchableOpacity>
+
+          <View style={styles.languageContainer}>
+            <Text style={styles.subTitle}>🌐 {i18n.t('language')}</Text>
+
+            <View style={styles.languageButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.langButton,
+                  language === 'en' && styles.langButtonActive,
+                ]}
+                onPress={() => handleLanguageChange('en')}
+              >
+                <Text
+                  style={[
+                    styles.langText,
+                    language === 'en' && styles.langTextActive,
+                  ]}
+                >
+                  English
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.langButton,
+                  language === 'zh' && styles.langButtonActive,
+                ]}
+                onPress={() => handleLanguageChange('zh')}
+              >
+                <Text
+                  style={[
+                    styles.langText,
+                    language === 'zh' && styles.langTextActive,
+                  ]}
+                >
+                  中文
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
 
       {activeTab === 'profile' && (
         <View style={styles.profileCard}>
-          <Text style={styles.subTitle}>Edit Profile</Text>
+          <Text style={styles.subTitle}>{i18n.t('editProfile')}</Text>
 
           <TextInput
             value={name}
             onChangeText={setName}
-            placeholder="Enter your name"
+            placeholder={i18n.t('enterName')}
             style={styles.input}
           />
 
           <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-            <Text style={styles.buttonText}>Save Changes</Text>
+            <Text style={styles.buttonText}>{i18n.t('save')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('menu')} style={styles.backButton}>
-            <Text style={styles.backText}>Back to Settings</Text>
+          <TouchableOpacity
+            onPress={() => setActiveTab('menu')}
+            style={styles.backButton}
+          >
+            <Text style={styles.backText}>{i18n.t('back')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -104,7 +159,13 @@ export default function SettingsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, backgroundColor: '#f4faff' },
-  title: { fontSize: 26, fontWeight: 'bold', marginBottom: 24, color: '#0e4d92',textAlign: 'center' },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    color: '#0e4d92',
+    textAlign: 'center',
+  },
   subTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -152,5 +213,36 @@ const styles = StyleSheet.create({
     color: '#0e4d92',
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  languageContainer: {
+    marginTop: 30,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  languageButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  langButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  langButtonActive: {
+    backgroundColor: '#0e4d92',
+  },
+  langText: {
+    color: '#0e4d92',
+    fontWeight: '600',
+  },
+  langTextActive: {
+    color: '#fff',
   },
 });

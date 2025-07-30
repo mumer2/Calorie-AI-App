@@ -10,15 +10,22 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
+
+const REQUEST_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/request-otp';
+const VERIFY_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/verify-otp';
 const SIGNUP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/signup';
 
 export default function SignupScreen({ navigation }) {
+  const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [role, setRole] = useState('member');
-  const [email, setEmail] = useState('');
+  const [contact, setContact] = useState(''); // email or phone
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  const [otp, setOtp] = useState('');
+  const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,62 +36,121 @@ export default function SignupScreen({ navigation }) {
     loadReferral();
   }, []);
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[0-9]{10,15}$/;
+  const passwordRegex = /^(?=.*\d).{6,}$/;
+
+  const isEmail = emailRegex.test(contact.trim());
+  const isPhone = phoneRegex.test(contact.trim());
+
+  const handleContinue = async () => {
+    if (!contact.trim()) return Alert.alert('Error', 'Enter email or phone number');
+    if (isEmail) {
+      setVerified(true);
+      setStep(2);
+    } else if (isPhone) {
+      setLoading(true);
+      try {
+        const res = await fetch(REQUEST_OTP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: contact.trim() }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          Alert.alert('OTP Sent', 'Check your phone');
+          setStep(3);
+        } else {
+          Alert.alert('Failed', data.message || 'Could not send OTP');
+        }
+      } catch (err) {
+        Alert.alert('Error', 'Network error');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      Alert.alert('Invalid', 'Enter a valid email or phone number');
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) return Alert.alert('Error', 'Enter the OTP');
+    setLoading(true);
+    try {
+      const res = await fetch(VERIFY_OTP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: contact.trim(), otp }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        Alert.alert('Verified', 'Phone number verified');
+        setVerified(true);
+        setStep(2);
+      } else {
+        Alert.alert('Failed', data.message || 'OTP verification failed');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Network error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignup = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*\d).{6,}$/;
-
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      return Alert.alert('Error', 'All fields are required');
+    if (!name.trim() || !password.trim()) {
+      return Alert.alert('Error', 'Name and password are required');
     }
-
-    if (!emailRegex.test(email.trim())) {
-      return Alert.alert('Invalid Email', 'Please enter a valid email address');
+    if (!isEmail && !isPhone) {
+      return Alert.alert('Invalid Contact', 'Enter a valid email or phone number');
     }
-
     if (!passwordRegex.test(password)) {
-      return Alert.alert(
-        'Weak Password',
-        'Password must be at least 6 characters and include at least one digit'
-      );
+      return Alert.alert('Weak Password', 'At least 6 characters with a digit');
     }
 
     setLoading(true);
-
     try {
-      const response = await fetch(SIGNUP_URL, {
+      const res = await fetch(SIGNUP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          email: email.trim().toLowerCase(),
+          email: isEmail ? contact.trim().toLowerCase() : '',
+          phone: isPhone ? contact.trim() : '',
           password,
           role,
           referralCode: referralCode.trim(),
         }),
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.userId) {
+      const data = await res.json();
+      if (res.ok && data.userId) {
         await AsyncStorage.setItem('userName', name.trim());
         await AsyncStorage.setItem('userId', data.userId);
         await AsyncStorage.setItem('userRole', role);
-        await AsyncStorage.setItem('userPoints', data.points?.toString() || '50'); // fallback
+        await AsyncStorage.setItem('userPoints', data.points?.toString() || '50');
         await AsyncStorage.setItem('referralCode', data.referralCode || '');
-        await AsyncStorage.removeItem('referralCode'); // clean up saved referral if any
+        await AsyncStorage.removeItem('referralCode');
 
-        Alert.alert('🎉 Account Created', `You earned ${data.points || 50} points for signing up!`);
+        Alert.alert('🎉 Account Created', `You earned ${data.points || 50} points!`);
         navigation.replace('Login');
       } else {
-        Alert.alert('Signup Failed', data.message || 'Something went wrong. Try again.');
+        Alert.alert('Signup Failed', data.message || 'Something went wrong');
       }
     } catch (error) {
-      console.error('Signup error:', error);
       Alert.alert('Error', 'Could not connect to server');
     } finally {
       setLoading(false);
     }
   };
+
+ const renderBackButton = () => (
+  <TouchableOpacity style={styles.backButton} onPress={() => setStep(step - 1)}>
+    <Ionicons name="arrow-back" size={18} color="#0e4d92" />
+    <Text style={styles.backText}>Back</Text>
+  </TouchableOpacity>
+);
+
 
   return (
     <KeyboardAvoidingView
@@ -94,57 +160,90 @@ export default function SignupScreen({ navigation }) {
       <View style={styles.card}>
         <Text style={styles.title}>Create Account</Text>
 
-        <View style={styles.roleSwitch}>
-          <TouchableOpacity onPress={() => setRole('member')}>
-            <Text style={role === 'member' ? styles.selected : styles.unselected}>Member</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setRole('coach')}>
-            <Text style={role === 'coach' ? styles.selected : styles.unselected}>Coach</Text>
-          </TouchableOpacity>
-        </View>
+        {step === 1 && (
+          <>
+            <TextInput
+              placeholder="Email or Phone"
+              style={styles.input}
+              value={contact}
+              onChangeText={setContact}
+              keyboardType="default"
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && { opacity: 0.6 }]}
+              onPress={handleContinue}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Processing...' : 'Continue'}</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
-        <TextInput
-          placeholder="Full Name"
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          placeholder="Email"
-          style={styles.input}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          placeholder="Password"
-          style={styles.input}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        {step === 3 && (
+          <>
+            {renderBackButton()}
+            <TextInput
+              placeholder="Enter OTP"
+              style={styles.input}
+              keyboardType="numeric"
+              value={otp}
+              onChangeText={setOtp}
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && { opacity: 0.6 }]}
+              onPress={handleVerifyOtp}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Verifying...' : 'Verify OTP'}</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
-        <Text style={styles.hintText}>
-          Password must be at least 6 characters and include a number.
-        </Text>
+        {step === 2 && verified && (
+          <>
+            {renderBackButton()}
 
-        <TextInput
-          placeholder="Referral Code (optional)"
-          style={styles.input}
-          value={referralCode}
-          onChangeText={setReferralCode}
-        />
+            <View style={styles.roleSwitch}>
+              <TouchableOpacity onPress={() => setRole('member')}>
+                <Text style={role === 'member' ? styles.selected : styles.unselected}>Member</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setRole('coach')}>
+                <Text style={role === 'coach' ? styles.selected : styles.unselected}>Coach</Text>
+              </TouchableOpacity>
+            </View>
 
-        <TouchableOpacity
-          style={[styles.button, loading && { opacity: 0.6 }]}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? 'Signing Up...' : 'Sign Up'}
-          </Text>
-        </TouchableOpacity>
+            <TextInput
+              placeholder="Full Name"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+            />
+            <TextInput
+              placeholder="Password"
+              style={styles.input}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <Text style={styles.hintText}>
+              Password must be at least 6 characters and include a number.
+            </Text>
+            <TextInput
+              placeholder="Referral Code (optional)"
+              style={styles.input}
+              value={referralCode}
+              onChangeText={setReferralCode}
+            />
+            <TouchableOpacity
+              style={[styles.button, loading && { opacity: 0.6 }]}
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Signing Up...' : 'Sign Up'}</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.link}>Already have an account? Log in</Text>
@@ -176,6 +275,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fafafa',
+    marginBottom: 14,
+  },
   roleSwitch: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -194,15 +302,6 @@ const styles = StyleSheet.create({
     color: '#888',
     padding: 6,
     fontSize: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fafafa',
-    marginBottom: 14,
   },
   hintText: {
     color: '#888',
@@ -228,4 +327,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
+ backButton: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 10,
+},
+backText: {
+  fontSize: 14,
+  color: '#0e4d92',
+  marginLeft: 6,
+},
 });

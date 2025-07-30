@@ -4,31 +4,39 @@
     "slug": "calorie-ai-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/AppLogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/Logo.png",
+      "image": "./assets/AppLogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": {
-      "supportsTablet": true
-    },
+   "ios": {
+  "supportsTablet": true,
+  "bundleIdentifier": "com.mumer.calorieai",
+  "buildNumber": "14",
+  "infoPlist": {
+    "ITSAppUsesNonExemptEncryption": false,
+    "NSCameraUsageDescription": "This app uses your camera for video calls and visual tracking.",
+    "NSMicrophoneUsageDescription": "This app uses your microphone for audio in video calls.",
+    "NSMotionUsageDescription": "Step counter requires motion access."
+  }
+},
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Logo.png",
+        "foregroundImage": "./assets/AppLogo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.m_umer_m.calorieaiapp"
+      "package": "com.umermalik.calorieaiapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "66cb2ea9-7cea-4b7b-90e7-f91a6f75e14c"
+        "projectId": "8dbc3a5a-18e4-40d0-be47-f3606950be00"
       }
     }
   }

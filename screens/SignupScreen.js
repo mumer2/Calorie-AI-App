@@ -12,16 +12,15 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-
-const REQUEST_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/request-otp';
-const VERIFY_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/verify-otp';
+const REQUEST_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/send-code';
+const VERIFY_OTP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/verify-code';
 const SIGNUP_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/signup';
 
 export default function SignupScreen({ navigation }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [role, setRole] = useState('member');
-  const [contact, setContact] = useState(''); // email or phone
+  const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [otp, setOtp] = useState('');
@@ -37,34 +36,39 @@ export default function SignupScreen({ navigation }) {
   }, []);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[0-9]{10,15}$/;
-  const passwordRegex = /^(?=.*\d).{6,}$/;
+  const phoneRegex = /^[0-9]{6,15}$/;
 
   const isEmail = emailRegex.test(contact.trim());
   const isPhone = phoneRegex.test(contact.trim());
 
+  const getFormattedPhone = () => {
+    return contact.trim();
+  };
+
   const handleContinue = async () => {
     if (!contact.trim()) return Alert.alert('Error', 'Enter email or phone number');
+
     if (isEmail) {
       setVerified(true);
       setStep(2);
     } else if (isPhone) {
       setLoading(true);
       try {
+        const formattedPhone = getFormattedPhone();
         const res = await fetch(REQUEST_OTP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: contact.trim() }),
+          body: JSON.stringify({ phone: formattedPhone }),
         });
         const data = await res.json();
-        if (res.ok) {
-          Alert.alert('OTP Sent', 'Check your phone');
+        if (res.ok && data.success) {
+          Alert.alert('OTP Sent', 'Check your phone for the verification code');
           setStep(3);
         } else {
           Alert.alert('Failed', data.message || 'Could not send OTP');
         }
       } catch (err) {
-        Alert.alert('Error', 'Network error');
+        Alert.alert('Error', 'Network error while sending OTP');
       } finally {
         setLoading(false);
       }
@@ -77,13 +81,14 @@ export default function SignupScreen({ navigation }) {
     if (!otp.trim()) return Alert.alert('Error', 'Enter the OTP');
     setLoading(true);
     try {
+      const formattedPhone = getFormattedPhone();
       const res = await fetch(VERIFY_OTP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: contact.trim(), otp }),
+        body: JSON.stringify({ phone: formattedPhone, code: otp.trim() }),
       });
       const data = await res.json();
-      if (res.ok) {
+      if (res.ok && data.success) {
         Alert.alert('Verified', 'Phone number verified');
         setVerified(true);
         setStep(2);
@@ -91,11 +96,13 @@ export default function SignupScreen({ navigation }) {
         Alert.alert('Failed', data.message || 'OTP verification failed');
       }
     } catch (err) {
-      Alert.alert('Error', 'Network error');
+      Alert.alert('Error', 'Network error while verifying OTP');
     } finally {
       setLoading(false);
     }
   };
+
+  const passwordRegex = /^(?=.*[0-9]).{6,}$/;
 
   const handleSignup = async () => {
     if (!name.trim() || !password.trim()) {
@@ -110,13 +117,14 @@ export default function SignupScreen({ navigation }) {
 
     setLoading(true);
     try {
+      const formattedPhone = getFormattedPhone();
       const res = await fetch(SIGNUP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           email: isEmail ? contact.trim().toLowerCase() : '',
-          phone: isPhone ? contact.trim() : '',
+          phone: isPhone ? formattedPhone : '',
           password,
           role,
           referralCode: referralCode.trim(),
@@ -144,13 +152,12 @@ export default function SignupScreen({ navigation }) {
     }
   };
 
- const renderBackButton = () => (
-  <TouchableOpacity style={styles.backButton} onPress={() => setStep(step - 1)}>
-    <Ionicons name="arrow-back" size={18} color="#0e4d92" />
-    <Text style={styles.backText}>Back</Text>
-  </TouchableOpacity>
-);
-
+  const renderBackButton = () => (
+    <TouchableOpacity style={styles.backButton} onPress={() => setStep(step - 1)}>
+      <Ionicons name="arrow-back" size={18} color="#0e4d92" />
+      <Text style={styles.backText}>Back</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <KeyboardAvoidingView
@@ -163,11 +170,11 @@ export default function SignupScreen({ navigation }) {
         {step === 1 && (
           <>
             <TextInput
-              placeholder="Email or Phone"
+              placeholder="Phone or Email"
               style={styles.input}
+              keyboardType="default"
               value={contact}
               onChangeText={setContact}
-              keyboardType="default"
               autoCapitalize="none"
             />
             <TouchableOpacity
@@ -184,7 +191,7 @@ export default function SignupScreen({ navigation }) {
           <>
             {renderBackButton()}
             <TextInput
-              placeholder="Enter OTP"
+              placeholder="Enter OTP sent to your phone"
               style={styles.input}
               keyboardType="numeric"
               value={otp}
@@ -195,7 +202,7 @@ export default function SignupScreen({ navigation }) {
               onPress={handleVerifyOtp}
               disabled={loading}
             >
-              <Text style={styles.buttonText}>{loading ? 'Verifying...' : 'Verify OTP'}</Text>
+              <Text style={styles.buttonText}>{loading ? 'Verifying...' : 'Verify Code'}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -203,7 +210,6 @@ export default function SignupScreen({ navigation }) {
         {step === 2 && verified && (
           <>
             {renderBackButton()}
-
             <View style={styles.roleSwitch}>
               <TouchableOpacity onPress={() => setRole('member')}>
                 <Text style={role === 'member' ? styles.selected : styles.unselected}>Member</Text>
@@ -327,14 +333,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
- backButton: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 10,
-},
-backText: {
-  fontSize: 14,
-  color: '#0e4d92',
-  marginLeft: 6,
-},
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  backText: {
+    fontSize: 14,
+    color: '#0e4d92',
+    marginLeft: 6,
+  },
 });

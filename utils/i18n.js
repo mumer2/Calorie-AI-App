@@ -98,7 +98,18 @@ recommendedDietPlan: "🥗 Recommended Diet Plan",
   nutsDryFruits: "Nuts & dry fruits - 150 kcal",
   boiledCornSprouts: "Boiled corn or sprouts - 100 kcal",
 
-  checkingSubscription: "Checking subscription..."
+  checkingSubscription: "Checking subscription...",
+
+
+  // AI CHAT SCREEN
+   aiChatTitle: "AI Chat",
+    askPlaceholder: "Ask about workouts, diet...",
+    send: "Send",
+    thinking: "CoachBot is thinking...",
+    errorFetch: "Sorry, failed to fetch answer.",
+    you: "You",
+    coachbot: "CoachBot",
+
   },
   zh: {
     settings: '设置',
@@ -195,7 +206,16 @@ recommendedDietPlan: "🥗 推荐饮食计划",
   nutsDryFruits: "坚果和干果 - 150 千卡",
   boiledCornSprouts: "煮玉米或豆芽 - 100 千卡",
 
-  checkingSubscription: "正在检查订阅..."
+  checkingSubscription: "正在检查订阅...",
+  // AI CHAT SCREEN
+      aiChatTitle: "AI 聊天",
+    askPlaceholder: "请输入有关锻炼、饮食的问题...",
+    send: "发送",
+    thinking: "教练机器人正在思考...",
+    errorFetch: "对不起，无法获取答案。",
+    you: "你",
+    coachbot: "教练机器人",
+
 
   },
 };

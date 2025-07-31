@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   View,
   TextInput,
@@ -12,8 +12,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { LanguageContext } from '../contexts/LanguageContext';
+import i18n from '../utils/i18n';
 
 export default function AIChatScreen() {
+  const { language } = useContext(LanguageContext); // Re-render on lang change
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +43,7 @@ export default function AIChatScreen() {
       console.error('❌ Chat API error:', err.message);
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: 'Sorry, failed to fetch answer.' },
+        { role: 'assistant', content: i18n.t('errorFetch') },
       ]);
     } finally {
       setLoading(false);
@@ -66,7 +69,7 @@ export default function AIChatScreen() {
               ]}
             >
               <Text style={styles.sender}>
-                {item.role === 'user' ? 'You' : 'CoachBot'}
+                {item.role === 'user' ? i18n.t('you') : i18n.t('coachbot')}
               </Text>
               <Text style={styles.messageText}>{item.content}</Text>
             </View>
@@ -84,7 +87,7 @@ export default function AIChatScreen() {
         {loading && (
           <View style={styles.typingWrapper}>
             <ActivityIndicator size="small" color="#555" />
-            <Text style={styles.typingText}>CoachBot is thinking...</Text>
+            <Text style={styles.typingText}>{i18n.t('thinking')}</Text>
           </View>
         )}
 
@@ -92,13 +95,13 @@ export default function AIChatScreen() {
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
-            placeholder="Ask about workouts, diet..."
+            placeholder={i18n.t('askPlaceholder')}
             placeholderTextColor="#999"
             value={input}
             onChangeText={setInput}
           />
           <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-            <Text style={styles.sendText}>Send</Text>
+            <Text style={styles.sendText}>{i18n.t('send')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderTopWidth: 1,
     borderColor: '#ddd',
-    backgroundColor: '#fff', // Ensures nothing shows behind
+    backgroundColor: '#fff',
     position: 'absolute',
     bottom: 0,
     left: 0,

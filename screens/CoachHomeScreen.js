@@ -1,91 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  Pressable,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import i18n from '../utils/i18n'; // ✅ same as SettingsScreen
+import { LanguageContext } from '../contexts/LanguageContext';
 
 export default function CoachHomeScreen({ navigation }) {
-  const [settingsVisible, setSettingsVisible] = useState(false);
   const [userName, setUserName] = useState('');
+  const { language } = useContext(LanguageContext); // optional if needed
 
   useFocusEffect(
-  useCallback(() => {
-    const getName = async () => {
-      const storedName = await AsyncStorage.getItem('userName');
-      if (storedName) {
-        setUserName(storedName);
-      }
-    };
-    getName();
-  }, [])
-);
-
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('authToken');
-    await AsyncStorage.removeItem('userRole');
-    await AsyncStorage.removeItem('userName');
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
-  };
+    useCallback(() => {
+      const getName = async () => {
+        const storedName = await AsyncStorage.getItem('userName');
+        if (storedName) {
+          setUserName(storedName);
+        }
+      };
+      getName();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
-      {/* Top Row with Name & Settings */}
+      {/* Top Bar */}
       <View style={styles.topBar}>
-        <Text style={styles.nameText}>Hi, {userName}</Text>
-        <TouchableOpacity onPress={() => setSettingsVisible(true)}>
+        <Text style={styles.nameText}>{i18n.t('hi')}, {userName}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('CoachSettings')}>
           <Ionicons name="settings-outline" size={24} color="#0e4d92" />
         </TouchableOpacity>
       </View>
 
-      {/* Dashboard Title */}
-      <Text style={styles.dashboardTitle}>🏋️ Coach Dashboard</Text>
+      {/* Title */}
+      <Text style={styles.dashboardTitle}>🏋️ {i18n.t('dashboardTitle')}</Text>
 
-      {/* Settings Menu */}
-      <Modal
-        visible={settingsVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsVisible(false)}
-      >
-        <Pressable style={styles.overlay} onPress={() => setSettingsVisible(false)}>
-          <View style={styles.settingsMenu}>
-            <TouchableOpacity onPress={handleLogout} style={styles.menuItem}>
-              <Ionicons name="log-out-outline" size={20} color="#b00020" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Action Cards */}
+      {/* Cards */}
       <View style={styles.cardRow}>
         <TouchableOpacity
           style={styles.card}
           onPress={() => navigation.navigate('ReviewRequests')}
         >
           <Ionicons name="eye-outline" size={32} color="#0e4d92" />
-          <Text style={styles.cardText}>Review Requests</Text>
+          <Text style={styles.cardText}>{i18n.t('reviewRequests')}</Text>
         </TouchableOpacity>
-         <TouchableOpacity
+
+        <TouchableOpacity
           style={styles.card}
           onPress={() => navigation.navigate('CoachLiveScreen')}
         >
           <Ionicons name="camera" size={32} color="#0e4d92" />
-          <Text style={styles.cardText}>Join Live Video</Text>
+          <Text style={styles.cardText}>{i18n.t('joinLiveVideo')}</Text>
         </TouchableOpacity>
-        
       </View>
     </View>
   );
@@ -139,31 +110,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0e4d92',
     textAlign: 'center',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-    paddingTop: 30,
-    paddingRight: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  settingsMenu: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    width: 150,
-    elevation: 4,
-    marginTop:'50',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  logoutText: {
-    marginLeft: 10,
-    color: '#b00020',
-    fontWeight: 'bold',
   },
 });

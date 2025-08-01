@@ -7,10 +7,12 @@ import {
   Animated,
   Image,
   ActivityIndicator,
+  SafeAreaView,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import i18n from '../utils/i18n'; // ✅ Import i18n
+import i18n from '../utils/i18n';
 
 export default function DietPlanScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -90,29 +92,35 @@ export default function DietPlanScreen() {
   }
 
   return (
-    <Animated.ScrollView style={[styles.container, { opacity: fadeAnim }]}>
-      <Text style={styles.title}>{i18n.t('recommendedDietPlan')}</Text>
-      {meals.map((meal, index) => (
-        <View key={index} style={styles.card}>
-          <View style={styles.mealRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>{meal.title}</Text>
-              {meal.items.map((item, idx) => (
-                <Text key={idx} style={styles.item}>• {item}</Text>
-              ))}
+    <SafeAreaView style={styles.safeArea} edges={['left','right','bottom']}>
+      <Animated.ScrollView style={[styles.container, { opacity: fadeAnim }]}>
+        <Text style={styles.title}>{i18n.t('recommendedDietPlan')}</Text>
+        {meals.map((meal, index) => (
+          <View key={index} style={styles.card}>
+            <View style={styles.mealRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{meal.title}</Text>
+                {meal.items.map((item, idx) => (
+                  <Text key={idx} style={styles.item}>• {item}</Text>
+                ))}
+              </View>
+              <Image source={meal.image} style={styles.mealImage} />
             </View>
-            <Image source={meal.image} style={styles.mealImage} />
           </View>
-        </View>
-      ))}
-    </Animated.ScrollView>
+        ))}
+      </Animated.ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
     backgroundColor: '#f0f8ff',
+  },
+  container: {
     padding: 20,
+    marginBottom: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -125,7 +133,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0e4d92',
     marginBottom: 20,
-    marginTop: 20,
     textAlign: 'center',
   },
   card: {

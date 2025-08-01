@@ -1,5 +1,4 @@
-import React, { useCallback, useContext } from 'react';
-import { useFocusEffect } from '@react-navigation/native'; // <-- import this
+import React, { useCallback, useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -7,50 +6,59 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  RefreshControl,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NotificationContext } from '../contexts/NotificationContext';
 import * as Notifications from 'expo-notifications';
+import { useFocusEffect } from '@react-navigation/native';
+import i18n from '../utils/i18n';
 
 const NOTIFICATIONS_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/getUserNotifications';
 
 export default function NotificationsScreen() {
   const { notifications, setNotifications, setUnreadCount } = useContext(NotificationContext);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchNotifications = async () => {
-  try {
-    const userId = await AsyncStorage.getItem('userId');
-    const response = await fetch(`${NOTIFICATIONS_URL}?userId=${userId}`);
-    const data = await response.json();
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
 
-    if (response.ok) {
-      setNotifications(data);
+      const response = await fetch(`${NOTIFICATIONS_URL}?userId=${userId}`);
+      const data = await response.json();
 
-      const unread = data.filter((n) => !n.isRead).length;
+      if (response.ok) {
+        setNotifications(data);
+        const unread = data.filter((n) => !n.isRead).length;
+        setUnreadCount(unread);
 
-      // ✅ Update badge count in context
-      setUnreadCount(0);
-
-      // ✅ Update the app icon badge count
-      await Notifications.setBadgeCountAsync(0);
-    } else {
-      Alert.alert('Error', data.message || 'Failed to load notifications');
+        // Reset badge count
+        await Notifications.setBadgeCountAsync(0);
+      } else {
+        Alert.alert(i18n.t('error'), data.message || i18n.t('fetchError'));
+      }
+    } catch (err) {
+      console.error('Notification Fetch Error:', err);
+      Alert.alert(i18n.t('error'), i18n.t('networkError'));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert('Error', 'Could not fetch notifications');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-  // ✅ Automatically refresh when screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
     }, [])
   );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchNotifications();
+  };
 
   const renderItem = ({ item }) => (
     <View style={[styles.card, !item.isRead && styles.unread]}>
@@ -62,7 +70,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>🔔 Your Notifications</Text>
+      <Text style={styles.header}>🔔 {i18n.t('notifications')}</Text>
       {loading ? (
         <ActivityIndicator size="large" color="#0e4d92" />
       ) : (
@@ -70,7 +78,17 @@ export default function NotificationsScreen() {
           data={notifications}
           keyExtractor={(item, index) => index.toString()}
           renderItem={renderItem}
-          ListEmptyComponent={<Text style={styles.empty}>No notifications yet.</Text>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#0e4d92" // iOS
+              colors={['#0e4d92']} // Android
+            />
+          }
+          ListEmptyComponent={
+            <Text style={styles.empty}>{i18n.t('noNotifications')}</Text>
+          }
         />
       )}
     </View>
@@ -78,7 +96,12 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f8ff', padding: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f8ff',
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
+  },
   header: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -97,8 +120,26 @@ const styles = StyleSheet.create({
   unread: {
     borderLeftColor: '#0e4d92',
   },
-  title: { fontWeight: 'bold', marginBottom: 4 },
-  body: { color: '#333', marginBottom: 6 },
-  time: { fontSize: 12, color: '#888' },
-  empty: { textAlign: 'center', color: '#666', marginTop: 50 },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 4,
+    color: '#0e4d92',
+  },
+  body: {
+    color: '#333',
+    marginBottom: 6,
+    fontSize: 14,
+  },
+  time: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'right',
+  },
+  empty: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 50,
+    fontSize: 14,
+  },
 });

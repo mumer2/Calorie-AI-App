@@ -1,16 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Linking, Alert, Platform } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, StyleSheet, Linking, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Camera } from 'expo-camera';
 import { Audio } from 'expo-av';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LanguageContext } from '../contexts/LanguageContext';
+import i18n from '../utils/i18n';
 
 export default function JitsiScreen({ route }) {
   const [hasPermissions, setHasPermissions] = useState(false);
   const { coach } = route.params || {};
+  const { language } = useContext(LanguageContext); // Re-render on language change
 
   useEffect(() => {
     if (!coach) {
-      Alert.alert('❌ No coach selected.');
+      Alert.alert(i18n.t('noCoachTitle'), i18n.t('noCoachMessage'));
       return;
     }
 
@@ -22,60 +26,59 @@ export default function JitsiScreen({ route }) {
         setHasPermissions(true);
       } else {
         Alert.alert(
-          'Permissions Required',
-          'Camera and microphone access are needed to join the meeting.',
+          i18n.t('permissionsTitle'),
+          i18n.t('permissionsMessage')
         );
       }
     })();
-  }, [coach]);
+  }, [coach, language]);
 
   const handleNavigation = (event) => {
     const { url } = event;
-
-    if (url.startsWith('intent://') || url.includes('external')) {
-      return false;
-    }
-
+    if (url.startsWith('intent://') || url.includes('external')) return false;
     if (!url.startsWith('https://meet.jit.si')) {
       Linking.openURL(url);
       return false;
     }
-
     return true;
   };
 
-  // Build dynamic meeting URL using coach ID and name
-  const displayName = coach?.name || 'Coach';
+  const displayName = coach?.name || i18n.t('coach');
   const roomName = `CalorieAI-Coach-${coach?._id || 'Unknown'}`;
   const encodedName = encodeURIComponent(displayName);
 
-  const url = `https://meet.jit.si/${roomName}#config.disableDeepLinking=true&config.prejoinPageEnabled=false&userInfo.displayName="${encodedName}"`;
+  const jitsiUrl = `https://meet.jit.si/${roomName}#config.disableDeepLinking=true&config.prejoinPageEnabled=false&userInfo.displayName="${encodedName}"`;
 
   return (
-    <View style={styles.container}>
-      {hasPermissions && (
-        <WebView
-          source={{ uri: url }}
-          javaScriptEnabled
-          domStorageEnabled
-          allowsInlineMediaPlayback
-          mediaPlaybackRequiresUserAction={false}
-          originWhitelist={['*']}
-          onShouldStartLoadWithRequest={handleNavigation}
-          startInLoadingState
-          cacheEnabled={false}
-          allowsFullscreenVideo
-          mixedContentMode="always"
-        />
-      )}
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+      <View style={styles.container}>
+        {hasPermissions && (
+          <WebView
+            source={{ uri: jitsiUrl }}
+            javaScriptEnabled
+            domStorageEnabled
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            originWhitelist={['*']}
+            onShouldStartLoadWithRequest={handleNavigation}
+            startInLoadingState
+            cacheEnabled={false}
+            allowsFullscreenVideo
+            mixedContentMode="always"
+          />
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
   container: {
     flex: 1,
     backgroundColor: 'black',
-    marginTop: Platform.OS === 'android' ? 24 : 0, // Adjust for status bar on Android
   },
 });

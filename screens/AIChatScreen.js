@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext } from 'react';
+import React, { useState, useRef, useContext, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -12,15 +12,32 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LanguageContext } from '../contexts/LanguageContext';
 import i18n from '../utils/i18n';
 
+const CHAT_STORAGE_KEY = '@chat_messages';
+
 export default function AIChatScreen() {
-  const { language } = useContext(LanguageContext); // Re-render on lang change
+  const { language } = useContext(LanguageContext);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
+
+  // Load stored chat
+  useEffect(() => {
+    const loadChat = async () => {
+      const saved = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
+      if (saved) setMessages(JSON.parse(saved));
+    };
+    loadChat();
+  }, []);
+
+  // Save chat on update
+  useEffect(() => {
+    AsyncStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -33,7 +50,7 @@ export default function AIChatScreen() {
     try {
       const res = await axios.post(
         'https://backend-calorieai-app.netlify.app/.netlify/functions/openai',
-        { question: input },
+        { question: input, lang: language }, // include language
         { headers: { 'Content-Type': 'application/json' } }
       );
 
@@ -51,7 +68,7 @@ export default function AIChatScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -61,6 +78,8 @@ export default function AIChatScreen() {
           ref={flatListRef}
           data={messages}
           keyExtractor={(_, index) => index.toString()}
+          showsVerticalScrollIndicator={false} // hides scroll line
+          contentContainerStyle={{ paddingBottom: 150, paddingTop: 0 }}
           renderItem={({ item }) => (
             <View
               style={[
@@ -80,10 +99,8 @@ export default function AIChatScreen() {
           onLayout={() =>
             flatListRef.current?.scrollToEnd({ animated: true })
           }
-          contentContainerStyle={{ paddingBottom: 150 }}
         />
 
-        {/* Typing indicator just above input */}
         {loading && (
           <View style={styles.typingWrapper}>
             <ActivityIndicator size="small" color="#555" />
@@ -91,7 +108,6 @@ export default function AIChatScreen() {
           </View>
         )}
 
-        {/* Input box */}
         <View style={styles.inputWrapper}>
           <TextInput
             style={styles.input}
@@ -113,6 +129,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 10,
+    marginTop: 0,
+    paddingTop: 0, // removes top margin
     backgroundColor: '#fff',
   },
   messageContainer: {

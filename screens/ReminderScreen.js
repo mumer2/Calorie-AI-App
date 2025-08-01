@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import i18n from '../utils/i18n';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -36,7 +36,7 @@ export default function ReminderScreen() {
   const requestNotificationPermission = async () => {
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission denied to send notifications');
+      Alert.alert(i18n.t('permissionDenied'));
     }
   };
 
@@ -55,13 +55,13 @@ export default function ReminderScreen() {
   const scheduleReminder = async (text, date) => {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🔔 Reminder',
+        title: i18n.t('reminderTitle'),
         body: text,
         sound: 'default',
       },
-       trigger: {
+      trigger: {
         type: 'date',
-        date: date, // ✅ fixed trigger format
+        date,
       },
     });
   };
@@ -78,16 +78,15 @@ export default function ReminderScreen() {
     const updated = [newReminder, ...reminders];
     saveReminders(updated);
     setText('');
-
     await scheduleReminder(text, time);
-    Alert.alert('✅ Reminder Set!', `At ${time.toLocaleTimeString()}`);
+    Alert.alert('✅', `${i18n.t('reminderSet')} ${time.toLocaleTimeString()}`);
   };
 
   const deleteReminder = (id) => {
-    Alert.alert('Delete?', 'Are you sure you want to delete this reminder?', [
-      { text: 'Cancel' },
+    Alert.alert(i18n.t('delete'), i18n.t('deleteConfirm'), [
+      { text: i18n.t('cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: i18n.t('delete'),
         style: 'destructive',
         onPress: () => {
           const filtered = reminders.filter((r) => r.id !== id);
@@ -103,33 +102,28 @@ export default function ReminderScreen() {
     setTime(currentTime);
   };
 
-
   const clearAllReminders = () => {
-  Alert.alert(
-    'Clear All?',
-    'Are you sure you want to delete all reminders?',
-    [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(i18n.t('clearAll'), i18n.t('clearAllConfirm'), [
+      { text: i18n.t('cancel'), style: 'cancel' },
       {
-        text: 'Delete All',
+        text: i18n.t('deleteAll'),
         style: 'destructive',
         onPress: async () => {
           await AsyncStorage.removeItem('reminders');
           setReminders([]);
         },
       },
-    ]
-  );
-};
+    ]);
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📅 Reminders</Text>
+      <Text style={styles.title}>📅 {i18n.t('reminders')}</Text>
 
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="e.g., Workout at 6 PM"
+        placeholder={i18n.t('reminderPlaceholder')}
         style={styles.input}
       />
 
@@ -137,7 +131,7 @@ export default function ReminderScreen() {
         style={styles.timeButton}
         onPress={() => setShowPicker(true)}
       >
-        <Text style={styles.timeText}>⏰ Set Time: {time.toLocaleTimeString()}</Text>
+        <Text style={styles.timeText}>⏰ {i18n.t('setTime')}: {time.toLocaleTimeString()}</Text>
       </TouchableOpacity>
 
       {showPicker && (
@@ -151,45 +145,51 @@ export default function ReminderScreen() {
       )}
 
       <TouchableOpacity style={styles.button} onPress={addReminder}>
-        <Text style={styles.buttonText}>Add Reminder</Text>
+        <Text style={styles.buttonText}>{i18n.t('addReminder')}</Text>
       </TouchableOpacity>
 
-     <FlatList
-  data={reminders}
-  keyExtractor={(item) => item.id}
-  renderItem={({ item }) => (
-    <View style={styles.reminderRow}>
-      <View>
-        <Text style={styles.reminderText}>🔔 {item.text}</Text>
-        <Text style={styles.reminderTime}>🕒 {item.time}</Text>
-      </View>
-      <TouchableOpacity
-        style={styles.deleteBtn}
-        onPress={() => deleteReminder(item.id)}
-      >
-        <Text style={styles.deleteBtnText}>❌</Text>
-      </TouchableOpacity>
-    </View>
-  )}
-/>
+      <FlatList
+        data={reminders}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.reminderRow}>
+            <View>
+              <Text style={styles.reminderText}>🔔 {item.text}</Text>
+              <Text style={styles.reminderTime}>🕒 {item.time}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={() => deleteReminder(item.id)}
+            >
+              <Text style={styles.deleteBtnText}>❌</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      />
+
       {/* <TouchableOpacity
-  style={[styles.button, { backgroundColor: '#c0392b' }]}
-  onPress={clearAllReminders}
->
-  <Text style={styles.buttonText}>🗑️ Clear All Reminders</Text>
-</TouchableOpacity> */}
-
+        style={[styles.button, { backgroundColor: '#c0392b' }]}
+        onPress={clearAllReminders}
+      >
+        <Text style={styles.buttonText}>🗑️ {i18n.t('clearAllReminders')}</Text>
+      </TouchableOpacity> */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f8ff', padding: 20,marginTop: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f8ff',
+    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 40 : 10,
+  },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#0e4d92',
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
@@ -216,39 +216,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  reminder: {
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: '#fff',
     padding: 14,
     borderRadius: 8,
     marginBottom: 10,
     elevation: 2,
   },
-  reminderText: { fontSize: 16, color: '#333' },
-  reminderTime: { fontSize: 14, color: '#666', marginTop: 4 },
-  buttonText: {
-  color: '#fff',
-  fontSize: 16,
-  fontWeight: 'bold',
-  textAlign: 'center',
-},
-reminderRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  backgroundColor: '#fff',
-  padding: 14,
-  borderRadius: 8,
-  marginBottom: 10,
-  elevation: 2,
-},
-deleteBtn: {
-  padding: 6,
-},
-deleteBtnText: {
-  fontSize: 18,
-  color: '#c0392b',
-},
-
-
+  reminderText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  reminderTime: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  deleteBtn: {
+    padding: 6,
+  },
+  deleteBtnText: {
+    fontSize: 18,
+    color: '#c0392b',
+  },
 });

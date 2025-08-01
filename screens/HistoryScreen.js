@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { LanguageContext } from '../contexts/LanguageContext';
+import i18n from '../utils/i18n';
 
 export default function CheckInHistoryScreen() {
+  const { language } = useContext(LanguageContext); // React to language change
   const [checkins, setCheckins] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +24,7 @@ export default function CheckInHistoryScreen() {
       const parsed = stored ? JSON.parse(stored) : [];
       setCheckins(parsed);
     } catch (error) {
-      console.error('Failed to load check-ins', error);
+      console.error('❌ Failed to load check-ins:', error);
     } finally {
       setLoading(false);
     }
@@ -29,19 +32,19 @@ export default function CheckInHistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true); // optional, for spinner
+      setLoading(true);
       loadCheckins();
     }, [])
   );
 
   const clearAllHistory = () => {
     Alert.alert(
-      'Clear All History',
-      'Are you sure you want to delete all check-in history?',
+      i18n.t('clearTitle'),
+      i18n.t('clearConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: i18n.t('cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: i18n.t('clear'),
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('checkins');
@@ -66,21 +69,21 @@ export default function CheckInHistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>📅 Check-In History</Text>
+        <Text style={styles.title}>📅 {i18n.t('checkinHistory')}</Text>
         {checkins.length > 0 && (
           <TouchableOpacity onPress={clearAllHistory}>
-            <Text style={styles.clearText}>Clear All</Text>
+            <Text style={styles.clearText}>{i18n.t('clear')}</Text>
           </TouchableOpacity>
         )}
       </View>
 
       {checkins.length === 0 ? (
-        <Text style={styles.empty}>No check-ins found.</Text>
+        <Text style={styles.empty}>{i18n.t('noCheckins')}</Text>
       ) : (
         <FlatList
           data={checkins}
           renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(_, index) => index.toString()}
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}

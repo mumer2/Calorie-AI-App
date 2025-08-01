@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import i18n from '../utils/i18n';
 
 export default function RedeemScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎁 Redeem Rewards</Text>
-      <Text style={styles.message}>Reward redemption coming soon!</Text>
+      <Text style={styles.title}>🎁 {i18n.t('redeemRewards')}</Text>
+      <Text style={styles.message}>{i18n.t('redeemComingSoon')}</Text>
     </View>
   );
 }
@@ -16,16 +17,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#eef6fb',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 26,
     fontWeight: 'bold',
     color: '#0e4d92',
     marginBottom: 10,
+    textAlign: 'center',
   },
   message: {
     fontSize: 16,
     color: '#555',
+    textAlign: 'center',
   },
 });

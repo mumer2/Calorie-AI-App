@@ -1,105 +1,110 @@
-
-
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { Video } from 'expo-av';
 import { Asset } from 'expo-asset';
+import i18n from '../utils/i18n'; // ✅ Add i18n
 
 const rawExercises = [
   {
-    name: 'Jumping Jacks',
-    file: require("../assets/videos/JumpingJacks.mp4"),
+    key: 'jumpingJacks',
+    file: require('../assets/videos/JumpingJacks.mp4'),
     duration: '20 sec',
   },
   {
-    name: 'Abdominal Crunches',
+    key: 'abdominalCrunches',
     file: require('../assets/videos/AbdominalCrunches.mp4'),
     duration: '12 reps',
   },
   {
-    name: 'Russian Twists',
+    key: 'russianTwists',
     file: require('../assets/videos/RussianTwist.mp4'),
     duration: '20 reps',
   },
   {
-    name: 'Mountain Climbers',
+    key: 'mountainClimbers',
     file: require('../assets/videos/MountainClimber.mp4'),
     duration: '20 reps',
   },
-   {
-    name: 'Heel Touches',
+  {
+    key: 'heelTouches',
     file: require('../assets/videos/HeelTouch.mp4'),
     duration: '20 reps',
   },
-   {
-    name: 'Leg Raises',
+  {
+    key: 'legRaises',
     file: require('../assets/videos/LegRaises.mp4'),
     duration: '18 reps',
   },
-   {
-    name: 'Plank',
+  {
+    key: 'plank',
     file: require('../assets/videos/Plank.mp4'),
     duration: '20 sec',
   },
-   {
-    name: 'Push Ups',
-    file: require("../assets/videos/PushUps.mp4"),
+  {
+    key: 'pushUps',
+    file: require('../assets/videos/PushUps.mp4'),
     duration: '12 reps',
   },
-   {
-    name: 'Wide Arm Push Ups',
-    file: require("../assets/videos/WideArmPushUps.mp4"),
+  {
+    key: 'wideArmPushUps',
+    file: require('../assets/videos/WideArmPushUps.mp4'),
     duration: '12 reps',
   },
-   {
-    name: 'Cobra Stretch',
-    file: require("../assets/videos/CobraStretch.mp4"),
+  {
+    key: 'cobraStretch',
+    file: require('../assets/videos/CobraStretch.mp4'),
     duration: '20 sec',
   },
 ];
 
 export default function ExerciseScreen() {
   const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const loaded = await Promise.all(
         rawExercises.map(async (ex) => {
           const asset = Asset.fromModule(ex.file);
-          await asset.downloadAsync(); //forces asset into the local file system
+          await asset.downloadAsync();
           return {
             ...ex,
+            name: i18n.t(ex.key),
             uri: asset.localUri,
           };
         })
       );
       setExercises(loaded);
+      setLoading(false);
     })();
   }, []);
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>🏋️ Daily Workout</Text>
+    <ScrollView style={styles.container} edges={['left','right','bottom']}>
+      <Text style={styles.title}>🏋️{i18n.t('dailyWorkout')}</Text>
 
-      {exercises.map((exercise, idx) => (
-        <View key={idx} style={styles.card}>
-          <Video
-            source={{ uri: exercise.uri }}
-            rate={1.0}
-            volume={1.0}
-            isMuted={false}
-            resizeMode="cover"
-            shouldPlay
-            isLooping
-           
-            style={styles.video}
-          />
-          <View style={styles.textBox}>
-            <Text style={styles.name}>{exercise.name}</Text>
-            <Text style={styles.duration}>⏱ {exercise.duration}</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#0e4d92" style={{ marginTop: 40 }} />
+      ) : (
+        exercises.map((exercise, idx) => (
+          <View key={idx} style={styles.card}>
+            <Video
+              source={{ uri: exercise.uri }}
+              rate={1.0}
+              volume={1.0}
+              isMuted={false}
+              resizeMode="cover"
+              shouldPlay
+              isLooping
+              style={styles.video}
+            />
+            <View style={styles.textBox}>
+              <Text style={styles.name}>{exercise.name}</Text>
+              <Text style={styles.duration}>⏱ {exercise.duration}</Text>
+            </View>
           </View>
-        </View>
-      ))}
+        ))
+      )}
     </ScrollView>
   );
 }
@@ -110,6 +115,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#f0f8ff',
     padding: 20,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
@@ -127,7 +133,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   video: {
-   width: '100%',
+    width: '100%',
     height: 200,
     borderRadius: 10,
     marginTop: 12,

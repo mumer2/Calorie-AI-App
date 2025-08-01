@@ -58,6 +58,7 @@ import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import SubscribeWithApple from "./screens/SubscribeWithApple";
 import SubscribeWithPaypal from "./screens/SubscribeWithPaypal";
+import CoachSettingScreen from "./screens/CoachSettingScreen";
 
 // 🔔 Push Notification Setup
 async function registerForPushNotificationsAsync() {
@@ -166,11 +167,11 @@ function AppWithNotifications({ userToken, userRole }) {
         <Stack.Screen name="Login" component={LoginScreen} options={{ title: i18n.t('login') }} />
         <Stack.Screen name="Signup" component={SignupScreen} options={{ title: i18n.t('signup') }} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="CoachHome" component={CoachHomeScreen} options={{ title: i18n.t('coachHome') }} />
+        <Stack.Screen name="CoachHome" component={CoachHomeScreen} options={{ title: i18n.t('coachHome'), headerShown: true  }} />
         <Stack.Screen name="Fitness" component={FitnessScreen} options={{ title: i18n.t('fitness'), headerShown: true  }} />
         <Stack.Screen name="Diet" component={DietPlanScreen} options={{ title: i18n.t('diet'), headerShown: true  }} />
         <Stack.Screen name="Exercise" component={ExerciseScreen} options={{ title: i18n.t('exercise'), headerShown: true  }} />
-        <Stack.Screen name="Subscribe" component={SubscribeScreen} options={{ title: i18n.t('subscribe') }} />
+        <Stack.Screen name="Subscribe" component={SubscribeScreen} options={{ title: i18n.t('subscribe'), headerShown: true  }} />
         <Stack.Screen name="Steps" component={StepCounterScreen} options={{ title: i18n.t('steps') }} />
         <Stack.Screen name="Reminders" component={ReminderScreen} options={{ title: i18n.t('reminders'), headerShown: true  }} />
         <Stack.Screen name="StepHistory" component={StepsHistoryScreen} options={{ title: i18n.t('stepHistory'), headerShown: true  }} />
@@ -178,24 +179,26 @@ function AppWithNotifications({ userToken, userRole }) {
         <Stack.Screen name="TrainingDetail" component={TrainingDetailScreen} options={{ title: i18n.t('trainingDetail'), headerShown: true  }} />
         <Stack.Screen name="TrainingVideo" component={TrainingVideoScreen} options={{ title: i18n.t('trainingVideo'), headerShown: true  }} />
         <Stack.Screen name="ProgressReport" component={ProgressReportScreen} options={{ title: i18n.t('progressReport'), headerShown: true  }} />
-        <Stack.Screen name="Jitsi" component={JitsiScreen} options={{ title: i18n.t('jitsi') }} />
+        <Stack.Screen name="Jitsi" component={JitsiScreen} options={{ title: i18n.t('jitsi'), headerShown: true }} />
         <Stack.Screen name="AIChat" component={AIChatScreen} options={{ title: i18n.t('aiChat'), headerShown: true  }} />
-        <Stack.Screen name="ReviewRequests" component={ReviewRequestsScreen} options={{ title: i18n.t('reviewRequests') }} />
+        <Stack.Screen name="ReviewRequests" component={ReviewRequestsScreen} options={{ title: i18n.t('reviewRequests'), headerShown: true }} />
         <Stack.Screen name="CoachList" component={CoachListScreen} options={{ title: i18n.t('coachList'), headerShown: true  }} />
         <Stack.Screen name="CoachProfile" component={CoachProfileScreen} options={{ title: i18n.t('coachProfile'), headerShown: true  }} />
-        <Stack.Screen name="SendRequest" component={SendRequestScreen} options={{ title: i18n.t('sendRequest') }} />
-        <Stack.Screen name="CoachVideoList" component={CoachVideoListScreen} options={{ title: i18n.t('coachVideoList') }} />
-        <Stack.Screen name="CoachLiveScreen" component={CoachLiveScreen} options={{ title: i18n.t('coachLiveScreen') }} />
-        <Stack.Screen name="CoinsReward" component={CoinsRewardScreen} options={{ title: i18n.t('coinsReward') }} />
-        <Stack.Screen name="RedeemScreen" component={RedeemScreen} options={{ title: i18n.t('redeemScreen') }} />
+        <Stack.Screen name="SendRequest" component={SendRequestScreen} options={{ title: i18n.t('sendRequest'), headerShown: true }} />
+        <Stack.Screen name="CoachVideoList" component={CoachVideoListScreen} options={{ title: i18n.t('coachVideoList'), headerShown: true }} />
+        <Stack.Screen name="CoachLiveScreen" component={CoachLiveScreen} options={{ title: i18n.t('coachLiveScreen'), headerShown: true }} />
+        <Stack.Screen name="CoinsReward" component={CoinsRewardScreen} options={{ title: i18n.t('coinsReward'), headerShown: true }} />
+        <Stack.Screen name="RedeemScreen" component={RedeemScreen} options={{ title: i18n.t('redeemScreen'), headerShown: true }} />
         <Stack.Screen name="WeChatPay" component={WeChatPayScreen} options={{ title: i18n.t('weChatPay') }} />
         <Stack.Screen name="SubwithCoins" component={SubscribeWithCoins} options={{ title: i18n.t('subWithCoins') }} />
         <Stack.Screen name="SubscriptionSuccess" component={SubscriptionSuccessScreen} options={{ title: i18n.t('subscriptionSuccess') }} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: i18n.t('forgotPassword') }} />
-        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: i18n.t('resetPassword') }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: i18n.t('forgotPassword'), headerShown: true }} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: i18n.t('resetPassword'), headerShown: true }}/>
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: i18n.t('notifications'), headerShown: true  }} />
         <Stack.Screen name="ApplePay" component={SubscribeWithApple} options={{ title: i18n.t('applePay') }} />
         <Stack.Screen name="PayPal" component={SubscribeWithPaypal} options={{ title: i18n.t('paypal') }} />
+        <Stack.Screen name="CoachSettings" component={CoachSettingScreen} options={{ title: i18n.t('settings'), headerShown: true  }} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

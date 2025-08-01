@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import i18n from '../utils/i18n';
+import { LanguageContext } from '../contexts/LanguageContext';
 
 const SEND_REQUEST_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/send-request';
 const GET_REPLIES_URL = 'https://backend-calorieai-app.netlify.app/.netlify/functions/get-replies';
@@ -24,49 +27,47 @@ export default function CoachProfileScreen({ route }) {
   const [replies, setReplies] = useState([]);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [sending, setSending] = useState(false);
-  const [hasNewReplies, setHasNewReplies] = useState(false); // ✅ new state
+  const [hasNewReplies, setHasNewReplies] = useState(false);
+  const { language } = useContext(LanguageContext); // to trigger i18n re-render
 
-  // Register push token once
   useEffect(() => {
     registerForPushNotificationsAsync();
   }, []);
 
- const registerForPushNotificationsAsync = async () => {
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+  const registerForPushNotificationsAsync = async () => {
+    if (Device.isDevice) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        Alert.alert(i18n.t('permissionNotGranted'));
+        return;
+      }
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      const userId = await AsyncStorage.getItem('userId');
+
+      await fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/save-push-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, pushToken: token }),
+      });
+
+      console.log('Expo Push Token:', token);
     }
-
-    if (finalStatus !== 'granted') {
-      Alert.alert('Permission not granted for push notifications.');
-      return;
-    }
-
-    const token = (await Notifications.getExpoPushTokenAsync()).data;
-    const userId = await AsyncStorage.getItem('userId');
-
-    // 🔥 Send token to backend
-    await fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/save-push-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, pushToken: token }),
-    });
-
-    console.log('Expo Push Token:', token);
-  }
-};
-
+  };
 
   const handleSendRequest = async () => {
     const userId = await AsyncStorage.getItem('userId');
     const userName = await AsyncStorage.getItem('userName');
 
     if (!message.trim()) {
-      Alert.alert('Message is required');
+      Alert.alert(i18n.t('messageRequired'));
       return;
     }
 
@@ -81,13 +82,13 @@ export default function CoachProfileScreen({ route }) {
       const data = await response.json();
 
       if (response.ok) {
-        Alert.alert('✅ Request Sent', 'Your request has been sent to the coach.');
+        Alert.alert(i18n.t('requestSentTitle'), i18n.t('requestSentBody'));
         setMessage('');
       } else {
-        Alert.alert('Error', data.message || 'Something went wrong.');
+        Alert.alert(i18n.t('error'), data.message || i18n.t('somethingWentWrong'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to send request.');
+      Alert.alert(i18n.t('error'), i18n.t('sendRequestFailed'));
     } finally {
       setSending(false);
     }
@@ -106,41 +107,39 @@ export default function CoachProfileScreen({ route }) {
         const newReply = prevParsed.length < data.length;
 
         if (newReply) {
-          // Trigger local push notification
           Notifications.scheduleNotificationAsync({
             content: {
-              title: '📩 New Reply from Your Coach!',
-              body: 'Tap to check the response now.',
+              title: i18n.t('newReplyTitle'),
+              body: i18n.t('newReplyBody'),
               data: { screen: 'Replies' },
             },
             trigger: null,
           });
-          setHasNewReplies(true); // ✅ show new message badge
+          setHasNewReplies(true);
         }
 
         await AsyncStorage.setItem(`replies_${coach._id}`, JSON.stringify(data));
         setReplies(data);
       } else {
-        Alert.alert('Error', 'Failed to load replies');
+        Alert.alert(i18n.t('error'), i18n.t('failedToLoadReplies'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Could not connect to server');
+      Alert.alert(i18n.t('error'), i18n.t('serverConnectionError'));
     } finally {
       setLoadingReplies(false);
     }
   };
 
-  // Fetch replies when switching to Replies tab
   useEffect(() => {
     if (activeTab === 'replies') {
       fetchReplies();
-      setHasNewReplies(false); // ✅ clear badge
+      setHasNewReplies(false);
     }
   }, [activeTab]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.profile}>Coach Profile</Text>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <Text style={styles.profile}>{i18n.t('coachProfile')}</Text>
 
       <View style={styles.row}>
         <Icon name="person" size={20} color="#0e4d92" style={styles.icon} />
@@ -157,14 +156,14 @@ export default function CoachProfileScreen({ route }) {
           style={[styles.tabButton, activeTab === 'request' && styles.activeTab]}
           onPress={() => setActiveTab('request')}
         >
-          <Text style={styles.tabText}>Send Request</Text>
+          <Text style={styles.tabText}>{i18n.t('sendRequest')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'replies' && styles.activeTab]}
           onPress={() => setActiveTab('replies')}
         >
           <Text style={styles.tabText}>
-            Replies {hasNewReplies && <Text style={styles.badge}>•</Text>}
+            {i18n.t('replies')} {hasNewReplies && <Text style={styles.badge}>•</Text>}
           </Text>
         </TouchableOpacity>
       </View>
@@ -172,7 +171,7 @@ export default function CoachProfileScreen({ route }) {
       {activeTab === 'request' && (
         <>
           <TextInput
-            placeholder="Type your request message..."
+            placeholder={i18n.t('typeYourMessage')}
             multiline
             value={message}
             onChangeText={setMessage}
@@ -186,7 +185,7 @@ export default function CoachProfileScreen({ route }) {
             {sending ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Send Request</Text>
+              <Text style={styles.buttonText}>{i18n.t('sendRequest')}</Text>
             )}
           </TouchableOpacity>
         </>
@@ -197,29 +196,29 @@ export default function CoachProfileScreen({ route }) {
           {loadingReplies ? (
             <ActivityIndicator size="large" color="#0e4d92" />
           ) : replies.length === 0 ? (
-            <Text style={styles.empty}>No replies yet.</Text>
+            <Text style={styles.empty}>{i18n.t('noRepliesYet')}</Text>
           ) : (
             <FlatList
               data={replies}
               keyExtractor={(item) => item._id}
               renderItem={({ item }) => (
                 <View style={styles.replyCard}>
-                  <Text style={styles.label}>🗨️ Your Request:</Text>
+                  <Text style={styles.label}>🗨️ {i18n.t('yourRequest')}</Text>
                   <Text style={styles.requestText}>{item.message}</Text>
-                  <Text style={styles.date}>Sent: {new Date(item.timestamp).toLocaleString()}</Text>
+                  <Text style={styles.date}>{i18n.t('sentAt')}: {new Date(item.timestamp).toLocaleString()}</Text>
 
                   <View style={styles.separator} />
 
-                  <Text style={styles.label}>🎯 Coach’s Reply:</Text>
+                  <Text style={styles.label}>🎯 {i18n.t('coachsReply')}</Text>
                   <Text style={styles.replyText}>{item.reply}</Text>
-                  <Text style={styles.date}>Replied: {new Date(item.repliedAt).toLocaleString()}</Text>
+                  <Text style={styles.date}>{i18n.t('repliedAt')}: {new Date(item.repliedAt).toLocaleString()}</Text>
                 </View>
               )}
             />
           )}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -271,7 +270,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  repliesContainer: { marginTop: 0,marginBottom: 100,paddingBottom: 60, },
+  repliesContainer: { marginTop: 0, marginBottom: 100, paddingBottom: 60 },
   replyCard: {
     backgroundColor: '#fff',
     padding: 16,

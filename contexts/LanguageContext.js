@@ -1,25 +1,36 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
 import i18n from '../utils/i18n';
 
 export const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState(i18n.locale);
+ const defaultLang = (Localization.locale || 'en').startsWith('zh') ? 'zh' : 'en';
+  const [language, setLanguage] = useState(defaultLang);
 
   useEffect(() => {
-    AsyncStorage.getItem('appLanguage').then((lang) => {
-      if (lang) {
-        i18n.locale = lang;
-        setLanguage(lang);
+    const loadLanguage = async () => {
+      try {
+        const storedLang = await AsyncStorage.getItem('appLanguage');
+        const selectedLang = storedLang || defaultLang;
+        i18n.locale = selectedLang;
+        setLanguage(selectedLang);
+      } catch (err) {
+        console.error('Failed to load language from storage:', err);
       }
-    });
+    };
+    loadLanguage();
   }, []);
 
   const changeLanguage = async (lang) => {
-    i18n.locale = lang;
-    setLanguage(lang);
-    await AsyncStorage.setItem('appLanguage', lang);
+    try {
+      i18n.locale = lang;
+      setLanguage(lang);
+      await AsyncStorage.setItem('appLanguage', lang);
+    } catch (err) {
+      console.error('Failed to save language to storage:', err);
+    }
   };
 
   return (
@@ -28,3 +39,35 @@ export const LanguageProvider = ({ children }) => {
     </LanguageContext.Provider>
   );
 };
+
+
+// import React, { createContext, useState, useEffect } from 'react';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import i18n from '../utils/i18n';
+
+// export const LanguageContext = createContext();
+
+// export const LanguageProvider = ({ children }) => {
+//   const [language, setLanguage] = useState(i18n.locale);
+
+//   useEffect(() => {
+//     AsyncStorage.getItem('appLanguage').then((lang) => {
+//       if (lang) {
+//         i18n.locale = lang;
+//         setLanguage(lang);
+//       }
+//     });
+//   }, []);
+
+//   const changeLanguage = async (lang) => {
+//     i18n.locale = lang;
+//     setLanguage(lang);
+//     await AsyncStorage.setItem('appLanguage', lang);
+//   };
+
+//   return (
+//     <LanguageContext.Provider value={{ language, changeLanguage }}>
+//       {children}
+//     </LanguageContext.Provider>
+//   );
+// };

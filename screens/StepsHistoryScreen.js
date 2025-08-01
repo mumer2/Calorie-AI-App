@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
+import i18n from '../utils/i18n';
 
 export default function StepsHistoryScreen() {
   const [history, setHistory] = useState([]);
@@ -69,10 +70,10 @@ export default function StepsHistoryScreen() {
     const { totalSteps, distance, calories } = getSummary();
     return (
       <View style={styles.summaryBox}>
-        <Text style={styles.summaryTitle}>📈 Summary - {filter}</Text>
-        <Text style={styles.summaryItem}>👣 Steps: {totalSteps.toLocaleString()}</Text>
-        <Text style={styles.summaryItem}>🚶 Distance: {distance} km</Text>
-        <Text style={styles.summaryItem}>🔥 Calories: {calories} kcal</Text>
+        <Text style={styles.summaryTitle}>📈 {i18n.t('summary')} - {i18n.t(filter.toLowerCase())}</Text>
+        <Text style={styles.summaryItem}>👣 {i18n.t('steps')}: {totalSteps.toLocaleString()}</Text>
+        <Text style={styles.summaryItem}>🚶 {i18n.t('distance')}: {distance} km</Text>
+        <Text style={styles.summaryItem}>🔥 {i18n.t('calories')}: {calories} kcal</Text>
       </View>
     );
   };
@@ -86,7 +87,7 @@ export default function StepsHistoryScreen() {
           onPress={() => setFilter(option)}
         >
           <Text style={[styles.filterText, filter === option && styles.filterTextActive]}>
-            {option}
+            {i18n.t(option.toLowerCase())}
           </Text>
         </TouchableOpacity>
       ))}
@@ -100,7 +101,7 @@ export default function StepsHistoryScreen() {
     return (
       <Animated.View style={styles.item}>
         <Text style={styles.date}>📅 {moment(item.date).format('dddd, MMM D')}</Text>
-        <Text style={styles.steps}>👣 {item.steps.toLocaleString()} steps</Text>
+        <Text style={styles.steps}>👣 {item.steps.toLocaleString()} {i18n.t('steps')}</Text>
         <Text style={styles.metrics}>🚶 {distance} km ‧ 🔥 {calories} kcal</Text>
       </Animated.View>
     );
@@ -108,7 +109,7 @@ export default function StepsHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🏃‍♂️ Step History Tracker</Text>
+      <Text style={styles.title}>🏃‍♂️ {i18n.t('stepHistoryTracker')}</Text>
 
       {renderSummary()}
       {renderFilterTabs()}
@@ -117,21 +118,21 @@ export default function StepsHistoryScreen() {
         data={filtered}
         keyExtractor={item => item.date}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.noData}>No data yet. Start moving! 💪</Text>}
+        ListEmptyComponent={<Text style={styles.noData}>{i18n.t('noDataMessage')}</Text>}
         contentContainerStyle={{ paddingBottom: 120 }}
       />
 
-    {filtered.length > 0 && (
-  <View style={styles.clearBtnWrapper}>
-    <TouchableOpacity style={styles.clearBtn} onPress={clearHistory}>
-      <Text style={styles.clearBtnText}>🗑 Clear All History</Text>
-    </TouchableOpacity>
-  </View>
-)}
-
+      {filtered.length > 0 && (
+        <View style={styles.clearBtnWrapper}>
+          <TouchableOpacity style={styles.clearBtn} onPress={clearHistory}>
+            <Text style={styles.clearBtnText}>🗑 {i18n.t('clearAllHistory')}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

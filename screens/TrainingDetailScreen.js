@@ -1,4 +1,3 @@
-// screens/TrainingDetailScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,9 +7,11 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import { Video } from 'expo-av';
 import { Asset } from 'expo-asset';
+import i18n from '../utils/i18n';
 
 // Static images
 import legCover from '../assets/trainings/Leg.jpeg';
@@ -18,7 +19,7 @@ import fullBodyCover from '../assets/trainings/ExercisePlan.jpeg';
 import walkCover from '../assets/trainings/WalkingGuide.jpeg';
 
 export default function TrainingDetailScreen({ route, navigation }) {
-  const { title, steps, duration,stepsduration, image, videoPreview } = route.params;
+  const { title, steps, duration, stepsduration, image, videoPreview } = route.params;
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [videoPreviewUri, setVideoPreviewUri] = useState(null);
   const [loadedSteps, setLoadedSteps] = useState([]);
@@ -26,7 +27,6 @@ export default function TrainingDetailScreen({ route, navigation }) {
   const isLastStep = currentStepIndex === steps.length - 1;
   const currentStep = loadedSteps[currentStepIndex];
 
-  // Preload videoPreview and step videos
   useEffect(() => {
     const preload = async () => {
       if (videoPreview) {
@@ -55,7 +55,7 @@ export default function TrainingDetailScreen({ route, navigation }) {
 
   const handleNext = () => {
     if (isLastStep) {
-      Alert.alert('🎉 Completed!', `You have finished "${title}"!`);
+      Alert.alert('🎉 ' + i18n.t('completed'), i18n.t('trainingFinished', { title }));
       navigation.goBack();
     } else {
       setCurrentStepIndex((prev) => prev + 1);
@@ -72,62 +72,68 @@ export default function TrainingDetailScreen({ route, navigation }) {
   if (loadedSteps.length === 0) return null;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Top video preview */}
-      {videoPreviewUri && (
-        <Video
-          source={{ uri: videoPreviewUri }}
-          style={styles.headerVideo}
-          useNativeControls
-          resizeMode="cover"
-          isLooping
-        />
-      )}
-
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.duration}>⏱ Duration: {duration}</Text>
-
-      {getCoverImage() && (
-        <Image source={getCoverImage()} style={styles.coverImage} />
-      )}
-
-      {/* Step */}
-      <View style={styles.stepBox}>
-        <Text style={styles.stepLabel}>
-          Step {currentStepIndex + 1} of {loadedSteps.length}
-        </Text>
-        <Text style={styles.stepText}>{currentStep.text}</Text>
-        <Text style={styles.duration}>⏱ {currentStep.stepsduration}</Text>
-
-        {currentStep.videoUri && (
+    <SafeAreaView style={styles.safe} edges={['left', 'right', 'bottom']}>
+      <ScrollView style={styles.container}>
+        {/* Top Video Preview */}
+        {videoPreviewUri && (
           <Video
-            source={{ uri: currentStep.videoUri }}
-            style={styles.stepVideo}
+            source={{ uri: videoPreviewUri }}
+            style={styles.headerVideo}
+            useNativeControls
             resizeMode="cover"
             isLooping
-            shouldPlay
-            isMuted={false}
-                      />
+          />
         )}
 
-        {currentStep.image && (
-          <Image source={currentStep.image} style={styles.stepImage} />
-        )}
-      </View>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.duration}>⏱ {i18n.t('duration')}: {duration}</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
-        <Text style={styles.buttonText}>
-          {isLastStep ? '✅ Finish Training' : '➡️ Next Step'}
-        </Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {getCoverImage() && (
+          <Image source={getCoverImage()} style={styles.coverImage} />
+        )}
+
+        {/* Step Box */}
+        <View style={styles.stepBox}>
+          <Text style={styles.stepLabel}>
+            {i18n.t('step')} {currentStepIndex + 1} {i18n.t('of')} {loadedSteps.length}
+          </Text>
+          <Text style={styles.stepText}>{currentStep.text}</Text>
+          <Text style={styles.duration}>⏱ {currentStep.stepsduration}</Text>
+
+          {currentStep.videoUri && (
+            <Video
+              source={{ uri: currentStep.videoUri }}
+              style={styles.stepVideo}
+              resizeMode="cover"
+              isLooping
+              shouldPlay
+              isMuted={false}
+            />
+          )}
+
+          {currentStep.image && (
+            <Image source={currentStep.image} style={styles.stepImage} />
+          )}
+        </View>
+
+        <TouchableOpacity style={styles.button} onPress={handleNext}>
+          <Text style={styles.buttonText}>
+            {isLastStep ? `✅ ${i18n.t('finishTraining')}` : `➡️ ${i18n.t('nextStep')}`}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
     backgroundColor: '#f4f9ff',
+    marginBottom: 40,
+  },
+  container: {
+    flex: 1,
     padding: 20,
   },
   headerVideo: {

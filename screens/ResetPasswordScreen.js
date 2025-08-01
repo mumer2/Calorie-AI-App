@@ -7,17 +7,19 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import i18n from '../utils/i18n';
 
 export default function ResetPasswordScreen({ route, navigation }) {
-  const { email, phone } = route.params || {}; // handle both
+  const { email, phone } = route.params || {};
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleReset = async () => {
     if (!otp.trim() || !password.trim()) {
-      return Alert.alert('Missing Fields', 'Please fill in all fields');
+      return Alert.alert(i18n.t('missingFields'), i18n.t('fillAllFields'));
     }
 
     setLoading(true);
@@ -40,13 +42,13 @@ export default function ResetPasswordScreen({ route, navigation }) {
       const data = await res.json();
 
       if (res.ok) {
-        Alert.alert('Success', 'Your password has been reset');
+        Alert.alert(i18n.t('success'), i18n.t('passwordResetSuccess'));
         navigation.navigate('Login');
       } else {
-        Alert.alert('Failed', data.message || 'Reset failed');
+        Alert.alert(i18n.t('failed'), data.message || i18n.t('resetFailed'));
       }
     } catch (err) {
-      Alert.alert('Error', 'Network error');
+      Alert.alert(i18n.t('error'), i18n.t('networkError'));
     } finally {
       setLoading(false);
     }
@@ -54,40 +56,75 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Reset Password</Text>
-      <Text style={styles.subTitle}>
-        Enter OTP and New Password
-      </Text>
+      <Text style={styles.title}>{i18n.t('resetPassword')}</Text>
+      <Text style={styles.subTitle}>{i18n.t('enterOtpAndPassword')}</Text>
 
       <TextInput
-        placeholder="OTP"
+        placeholder={i18n.t('otp')}
         style={styles.input}
         keyboardType="numeric"
         value={otp}
         onChangeText={setOtp}
       />
       <TextInput
-        placeholder="New Password"
+        placeholder={i18n.t('newPassword')}
         style={styles.input}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
       <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>{i18n.t('resetPassword')}</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flex: 1, justifyContent: 'center', backgroundColor: '#f0f8ff' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center', color: '#0e4d92' },
-  subTitle: { fontSize: 14, textAlign: 'center', marginBottom: 20, color: '#333' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 16 },
-  button: { backgroundColor: '#0e4d92', padding: 14, borderRadius: 10, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16 },
+  container: {
+    padding: 20,
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: '#f0f8ff',
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#0e4d92',
+  },
+  subTitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#0e4d92',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });
+
 
 // import React, { useState } from 'react';
 // import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';

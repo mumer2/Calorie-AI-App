@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,17 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LanguageContext } from '../contexts/LanguageContext';
+import i18n from '../utils/i18n';
 
 export default function CheckInScreen() {
   const [note, setNote] = useState('');
+  const { language } = useContext(LanguageContext); // for re-render on language change
 
   const handleSubmit = async () => {
     if (!note.trim()) {
-      Alert.alert('Please enter something for your check-in.');
+      Alert.alert(i18n.t('checkinEmpty'));
       return;
     }
 
@@ -30,43 +34,63 @@ export default function CheckInScreen() {
     try {
       const stored = await AsyncStorage.getItem('checkins');
       const parsed = stored ? JSON.parse(stored) : [];
-      parsed.unshift(entry); // add newest on top
+      parsed.unshift(entry); // Add to top
       await AsyncStorage.setItem('checkins', JSON.stringify(parsed));
 
-      Alert.alert('✅ Check-in saved!');
+      Alert.alert('✅', i18n.t('checkinSaved'));
       setNote('');
     } catch (err) {
-      Alert.alert('❌ Failed to save check-in.');
+      Alert.alert('❌', i18n.t('checkinFailed'));
       console.error(err);
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-    >
-      <View style={styles.box}>
-        <Text style={styles.title}>📝 Daily Check-In</Text>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="How was your workout or day?"
-          style={styles.input}
-          multiline
-        />
-        <TouchableOpacity onPress={handleSubmit} style={styles.button}>
-          <Text style={styles.buttonText}>Save Check-In</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f0f8ff' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.container}
+        keyboardVerticalOffset={60}
+      >
+        <View style={styles.box}>
+          <Text style={styles.title}>📝 {i18n.t('dailyCheckIn')}</Text>
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            placeholder={i18n.t('checkinPlaceholder')}
+            style={styles.input}
+            multiline
+            textAlignVertical="top"
+          />
+          <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+            <Text style={styles.buttonText}>{i18n.t('saveCheckIn')}</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f8ff', padding: 20, justifyContent: 'center' },
-  box: { backgroundColor: '#fff', padding: 20, borderRadius: 12, elevation: 4 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 14, color: '#0e4d92' },
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    paddingTop: 0,
+    marginTop: 0,
+  },
+  box: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    elevation: 4,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 14,
+    color: '#0e4d92',
+  },
   input: {
     height: 120,
     borderColor: '#ccc',
@@ -74,7 +98,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    textAlignVertical: 'top',
     backgroundColor: '#fff',
     marginBottom: 20,
   },
@@ -84,6 +107,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
-``

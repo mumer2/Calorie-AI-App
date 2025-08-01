@@ -7,21 +7,22 @@ import {
   Share,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
+import i18n from '../utils/i18n';
 
-const GET_POINTS_URL =
-"https://backend-calorieai-app.netlify.app/.netlify/functions/get-points";
+const GET_POINTS_URL = "https://backend-calorieai-app.netlify.app/.netlify/functions/get-points";
 
 export default function CoinsRewardScreen() {
   const [points, setPoints] = useState(0);
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState("");
   const navigation = useNavigation();
-  
+
   useEffect(() => {
     const fetchCoins = async () => {
       try {
@@ -31,7 +32,7 @@ export default function CoinsRewardScreen() {
 
         if (!userId) {
           setLoading(false);
-          return Alert.alert("Error", "User not logged in.");
+          return Alert.alert(i18n.t('error'), i18n.t('userNotLoggedIn'));
         }
 
         const res = await fetch(`${GET_POINTS_URL}?userId=${userId}`);
@@ -40,11 +41,11 @@ export default function CoinsRewardScreen() {
         if (res.ok) {
           setPoints(data.coins || 0);
         } else {
-          Alert.alert("Error", data.message || "Could not fetch coins");
+          Alert.alert(i18n.t('error'), data.message || i18n.t('fetchCoinsError'));
         }
       } catch (err) {
         console.error("Fetch error:", err);
-        Alert.alert("Error", "Something went wrong.");
+        Alert.alert(i18n.t('error'), i18n.t('genericError'));
       } finally {
         setLoading(false);
       }
@@ -56,7 +57,7 @@ export default function CoinsRewardScreen() {
   const shareReferral = async () => {
     try {
       await Share.share({
-        message: `🎁 Join CalorieAI and earn coins! Use my referral code: ${referralCode || "XXXXXX"}`,
+        message: i18n.t('shareMessage', { code: referralCode || 'XXXXXX' }),
       });
     } catch (err) {
       console.error("Share error:", err);
@@ -67,27 +68,27 @@ export default function CoinsRewardScreen() {
     <LinearGradient colors={["#f6f9ff", "#dbeeff"]} style={styles.container}>
       <View style={styles.card}>
         <Ionicons name="trophy" size={64} color="#f39c12" style={styles.icon} />
-        <Text style={styles.title}>My Coins</Text>
+        <Text style={styles.title}>{i18n.t('myCoins')}</Text>
 
         {loading ? (
           <ActivityIndicator size="large" color="#0e4d92" />
         ) : (
           <>
             <Text style={styles.coins}>{points}</Text>
-            <Text style={styles.coinsLabel}>Coins Earned</Text>
+            <Text style={styles.coinsLabel}>{i18n.t('coinsEarned')}</Text>
 
             <TouchableOpacity style={styles.button} onPress={shareReferral}>
               <Ionicons name="share-social" size={18} color="#fff" />
-              <Text style={styles.buttonText}>Refer a Friend</Text>
+              <Text style={styles.buttonText}>{i18n.t('referFriend')}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[styles.button, { backgroundColor: "#2ecc71" }]}
               onPress={() => navigation.navigate("RedeemScreen")}
             >
               <Ionicons name="gift" size={18} color="#fff" />
-              <Text style={styles.buttonText}>Redeem Rewards</Text>
-            </TouchableOpacity>
+              <Text style={styles.buttonText}>{i18n.t('redeemRewards')}</Text>
+            </TouchableOpacity> */}
           </>
         )}
       </View>
@@ -101,6 +102,7 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "center",
     alignItems: "center",
+    paddingTop: Platform.OS === "android" ? 0 : 0,
   },
   card: {
     backgroundColor: "#fff",

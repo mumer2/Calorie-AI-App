@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -22,21 +22,29 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const clearBadgeAndCount = async () => {
+    await Notifications.setBadgeCountAsync(0);
+    setUnreadCount(0);
+    await AsyncStorage.setItem('unreadCount', '0'); // store locally
+  };
+
   const fetchNotifications = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) return;
 
-      const response = await fetch(`${NOTIFICATIONS_URL}?userId=${userId}`);
-      const data = await response.json();
+      const res = await fetch(`${NOTIFICATIONS_URL}?userId=${userId}`);
+      const data = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         setNotifications(data);
+
         const unread = data.filter((n) => !n.isRead).length;
         setUnreadCount(unread);
 
-        // Reset badge count
-        await Notifications.setBadgeCountAsync(0);
+        if (unread === 0) {
+          await clearBadgeAndCount();
+        }
       } else {
         Alert.alert(i18n.t('error'), data.message || i18n.t('fetchError'));
       }
@@ -54,6 +62,14 @@ export default function NotificationsScreen() {
       fetchNotifications();
     }, [])
   );
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      fetchNotifications(); // Fetch new notifications instantly
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -82,8 +98,8 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#0e4d92" // iOS
-              colors={['#0e4d92']} // Android
+              tintColor="#0e4d92"
+              colors={['#0e4d92']}
             />
           }
           ListEmptyComponent={

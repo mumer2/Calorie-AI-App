@@ -4,26 +4,42 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import i18n from '../utils/i18n'; // ✅ same as SettingsScreen
+import i18n from '../utils/i18n';
 import { LanguageContext } from '../contexts/LanguageContext';
 
 export default function CoachHomeScreen({ navigation }) {
   const [userName, setUserName] = useState('');
-  const { language } = useContext(LanguageContext); // optional if needed
+  const [profileUri, setProfileUri] = useState(null);
+  const { language } = useContext(LanguageContext);
 
   useFocusEffect(
     useCallback(() => {
-      const getName = async () => {
-        const storedName = await AsyncStorage.getItem('userName');
-        if (storedName) {
-          setUserName(storedName);
+      const loadUserData = async () => {
+        try {
+          const [storedName, userId, userRole] = await Promise.all([
+            AsyncStorage.getItem('userName'),
+            AsyncStorage.getItem('userId'),
+            AsyncStorage.getItem('userRole'),
+          ]);
+
+          if (storedName) setUserName(storedName);
+
+          if (userId && userRole) {
+            const uriKey = `profile_${userRole}_${userId}`;
+            const storedUri = await AsyncStorage.getItem(uriKey);
+            if (storedUri) setProfileUri(storedUri);
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
         }
       };
-      getName();
+
+      loadUserData();
     }, [])
   );
 
@@ -31,7 +47,18 @@ export default function CoachHomeScreen({ navigation }) {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Text style={styles.nameText}>{i18n.t('hi')}, {userName}</Text>
+        <View style={styles.profileInfo}>
+          <Image
+            source={
+              profileUri
+                ? { uri: profileUri }
+                : { uri: 'https://www.gravatar.com/avatar/?d=mp' }
+            }
+            style={styles.profileImage}
+          />
+          <Text style={styles.nameText}>{userName}</Text>
+        </View>
+
         <TouchableOpacity onPress={() => navigation.navigate('CoachSettings')}>
           <Ionicons name="settings-outline" size={24} color="#0e4d92" />
         </TouchableOpacity>
@@ -73,6 +100,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  profileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#ccc',
   },
   nameText: {
     fontSize: 18,

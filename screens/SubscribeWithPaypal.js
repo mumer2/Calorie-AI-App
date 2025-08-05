@@ -1,7 +1,4 @@
-// ===========================
-// 1. SubscribeWithPaypal.js
-// ===========================
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,17 +10,22 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import i18n from '../utils/i18n';
+import { LanguageContext } from '../contexts/LanguageContext';
 
 export default function SubscribeWithPaypal({ navigation }) {
   const [loading, setLoading] = useState(false);
-  const amount = 5; // USD
+  const [selectedPlan, setSelectedPlan] = useState('monthly');
+  const { language } = useContext(LanguageContext);
+
+  const planAmount = selectedPlan === 'yearly' ? 399 : 50;
 
   const handlePaypalPayment = async () => {
     try {
       setLoading(true);
       const userId = await AsyncStorage.getItem('userId');
       if (!userId) {
-        Alert.alert('Error', 'User ID not found.');
+        Alert.alert(i18n.t('error'), i18n.t('userIdMissing'));
         return;
       }
 
@@ -32,7 +34,7 @@ export default function SubscribeWithPaypal({ navigation }) {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, amount }),
+          body: JSON.stringify({ userId, amount: planAmount, plan: selectedPlan }),
         }
       );
 
@@ -42,12 +44,14 @@ export default function SubscribeWithPaypal({ navigation }) {
         const supported = await Linking.canOpenURL(data.approvalUrl);
         supported
           ? Linking.openURL(data.approvalUrl)
-          : Alert.alert('Error', 'Cannot open PayPal URL');
+          : Alert.alert(i18n.t('error'), i18n.t('paypalOpenFail'));
+
+        await AsyncStorage.setItem('isSubscribed', 'true');
       } else {
-        Alert.alert('PayPal Error', data.error || 'No approval URL');
+        Alert.alert(i18n.t('paypalError'), data.error || i18n.t('paypalNoUrl'));
       }
     } catch (err) {
-      Alert.alert('Error', err.message || 'Network error.');
+      Alert.alert(i18n.t('error'), err.message || i18n.t('networkError'));
     } finally {
       setLoading(false);
     }
@@ -56,10 +60,38 @@ export default function SubscribeWithPaypal({ navigation }) {
   return (
     <LinearGradient colors={['#e0f0ff', '#f7fbff']} style={styles.gradient}>
       <View style={styles.container}>
-        <Text style={styles.title}>💳 PayPal Subscription</Text>
-        <Text style={styles.subtitle}>
-          Subscribe for premium access using PayPal.
-        </Text>
+        <Text style={styles.title}>💳 {i18n.t('paypalTitle')}</Text>
+        <Text style={styles.subtitle}>{i18n.t('paypalSubtitle')}</Text>
+
+        <View style={styles.planToggleContainer}>
+          <TouchableOpacity
+            style={[styles.planButton, selectedPlan === 'monthly' && styles.activePlan]}
+            onPress={() => setSelectedPlan('monthly')}
+          >
+            <Text
+              style={[
+                styles.planButtonText,
+                selectedPlan === 'monthly' && styles.activeText,
+              ]}
+            >
+              {i18n.t('monthly')} - $50
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.planButton, selectedPlan === 'yearly' && styles.activePlan]}
+            onPress={() => setSelectedPlan('yearly')}
+          >
+            <Text
+              style={[
+                styles.planButtonText,
+                selectedPlan === 'yearly' && styles.activeText,
+              ]}
+            >
+              {i18n.t('yearly')} - $399
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={[styles.button, loading && { opacity: 0.7 }]}
@@ -69,11 +101,13 @@ export default function SubscribeWithPaypal({ navigation }) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Pay $5 with PayPal</Text>
+            <Text style={styles.buttonText}>
+              {i18n.t('payWithPaypal', { amount: planAmount })}
+            </Text>
           )}
         </TouchableOpacity>
 
-        <Text style={styles.note}>🔒 Fast & secure PayPal checkout.</Text>
+        <Text style={styles.note}>{i18n.t('paypalNote')}</Text>
       </View>
     </LinearGradient>
   );
@@ -100,6 +134,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     paddingHorizontal: 20,
+  },
+  planToggleContainer: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    gap: 10,
+  },
+  planButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0070BA',
+    backgroundColor: '#fff',
+  },
+  planButtonText: {
+    color: '#0070BA',
+    fontWeight: '600',
+  },
+  activePlan: {
+    backgroundColor: '#0070BA',
+  },
+  activeText: {
+    color: '#fff',
   },
   button: {
     backgroundColor: '#0070BA',

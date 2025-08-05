@@ -1,126 +1,149 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   Alert,
+  StyleSheet,
+  ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import i18n from '../utils/i18n'; // ✅ Add i18n import
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import axios from "axios";
+import Icon from "react-native-vector-icons/Ionicons";
+import i18n from "../utils/i18n";
 
-export default function ForgotPasswordScreen({ navigation }) {
-  const [contact, setContact] = useState('');
+export default function ForgotPasswordScreen() {
+  const navigation = useNavigation();
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[0-9]{6,15}$/;
+  const isPhone = /^\d{10,15}$/.test(input);
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input);
 
-  const handleSendOTP = async () => {
-    if (!contact.trim()) return Alert.alert(i18n.t('error'), i18n.t('enterContact'));
-    setLoading(true);
+  const handleReset = async () => {
+    const trimmed = input.trim();
 
-    const isEmail = emailRegex.test(contact.trim());
-    const isPhone = phoneRegex.test(contact.trim());
-
-    if (!isEmail && !isPhone) {
-      Alert.alert(i18n.t('invalid'), i18n.t('validContact'));
-      setLoading(false);
+    if (!trimmed) {
+      Alert.alert(i18n.t("error"), i18n.t("enterEmailOrPhone"));
       return;
     }
 
+    if (!isEmail && !isPhone) {
+      Alert.alert(i18n.t("error"), i18n.t("validEmailOrPhone"));
+      return;
+    }
+
+    const payload = isPhone
+      ? { phone: trimmed }
+      : { email: trimmed.toLowerCase() };
+
+    setLoading(true);
     try {
-      const endpoint = isEmail
-        ? 'https://backend-calorieai-app.netlify.app/.netlify/functions/send-otp'
-        : 'https://backend-calorieai-app.netlify.app/.netlify/functions/send-code';
+      const response = await axios.post(
+        "https://backend-calorieai-app.netlify.app/.netlify/functions/requestReset",
+        payload
+      );
 
-      const body = isEmail
-        ? { email: contact.trim().toLowerCase() }
-        : { phone: contact.trim() };
+      if (response.data?.success && response.data?.token) {
+        Alert.alert(i18n.t("codeSent"), i18n.t("checkInboxOrSms"));
 
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success !== false) {
-        Alert.alert(i18n.t('success'), i18n.t('otpSent'));
-        navigation.navigate('ResetPassword', {
-          contact: contact.trim(),
-          method: isEmail ? 'email' : 'phone',
+        navigation.navigate("ResetPassword", {
+          email: response.data.email || "",
+          phone: response.data.phone || "",
+          token: response.data.token,
         });
       } else {
-        Alert.alert(i18n.t('failed'), data.message || i18n.t('otpFailed'));
+        Alert.alert(
+          i18n.t("error"),
+          response.data?.message || i18n.t("sendCodeFailed")
+        );
       }
-    } catch (err) {
-      Alert.alert(i18n.t('error'), i18n.t('networkError'));
+    } catch (error) {
+      console.error("Reset error:", error);
+      Alert.alert(
+        i18n.t("error"),
+        error.response?.data?.message || i18n.t("serverError")
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{i18n.t('resetPassword')}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>🔑 {i18n.t("forgotPasswordTitle")}</Text>
+
       <TextInput
-        placeholder={i18n.t('enterContact')}
+        placeholder={i18n.t("enterEmailOrPhone")}
+        placeholderTextColor="#999"
         style={styles.input}
         keyboardType="default"
         autoCapitalize="none"
-        value={contact}
-        onChangeText={setContact}
-        placeholderTextColor="#888"
+        value={input}
+        onChangeText={setInput}
       />
+
       <TouchableOpacity
-        style={[styles.button, loading && { opacity: 0.7 }]}
-        onPress={handleSendOTP}
+        style={styles.button}
+        onPress={handleReset}
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#2c2c4e" />
         ) : (
-          <Text style={styles.buttonText}>{i18n.t('sendOtp')}</Text>
+          <Text style={styles.buttonText}>{i18n.t("sendResetCode")}</Text>
         )}
       </TouchableOpacity>
-    </View>
+
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+          <Icon name="arrow-back" size={20} color="#555" />
+          <Text style={[styles.link, { marginLeft: 6 }]}>{i18n.t("back")}</Text>
+        </View>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#f0f8ff',
+    flexGrow: 1,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    padding: 24,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#0e4d92',
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#2c2c4e",
+    textAlign: "center",
+    marginBottom: 30,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    backgroundColor: "#eee",
+    color: "#000",
     padding: 12,
-    marginBottom: 20,
-    color: '#000',
+    borderRadius: 10,
+    marginBottom: 15,
   },
   button: {
-    backgroundColor: '#0e4d92',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
+    backgroundColor: "#f8e1c1",
+    paddingVertical: 14,
+    borderRadius: 20,
+    alignItems: "center",
+    marginBottom: 20,
   },
   buttonText: {
-    color: '#fff',
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#2c2c4e",
+  },
+  link: {
+    textAlign: "center",
+    color: "#555",
+    fontSize: 14,
   },
 });
 
@@ -128,7 +151,7 @@ const styles = StyleSheet.create({
 // import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 
 // export default function ForgotPasswordScreen({ navigation }) {
-//   const [email, setEmail] = useState('');
+//     const [email, setEmail] = useState('');
 //   const [loading, setLoading] = useState(false);
 
 //   const handleSendOTP = async () => {
@@ -136,14 +159,14 @@ const styles = StyleSheet.create({
 //     setLoading(true);
 
 //     try {
-//       const res = await fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/send-otp', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ email }),
-//       });
-
-//       const data = await res.json();
-//       if (res.ok) {
+//         const res = await fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/send-otp', {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/json' },
+//             body: JSON.stringify({ email }),
+//           });
+    
+//           const data = await res.json();
+//           if (res.ok) {
 //         Alert.alert('Success', 'OTP sent to your email');
 //         navigation.navigate('ResetPassword', { email });
 //       } else {
@@ -152,32 +175,32 @@ const styles = StyleSheet.create({
 //     } catch (e) {
 //       Alert.alert('Error', 'Network error');
 //     } finally {
-//       setLoading(false);
-//     }
-//   };
+//         setLoading(false);
+//       }
+//     };
 
 //   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Reset Password</Text>
-//       <TextInput
-//         placeholder="Enter your email"
-//         style={styles.input}
-//         keyboardType="email-address"
-//         autoCapitalize="none"
-//         value={email}
-//         onChangeText={setEmail}
-//       />
-//       <TouchableOpacity style={styles.button} onPress={handleSendOTP} disabled={loading}>
-//         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { padding: 20, flex: 1, justifyContent: 'center', backgroundColor: '#f0f8ff' },
-//   title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#0e4d92' },
-//   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 20 },
-//   button: { backgroundColor: '#0e4d92', padding: 14, borderRadius: 10, alignItems: 'center' },
-//   buttonText: { color: '#fff', fontSize: 16 },
+//       <View style={styles.container}>
+//         <Text style={styles.title}>Reset Password</Text>
+//         <TextInput
+//           placeholder="Enter your email"
+//           style={styles.input}
+//           keyboardType="email-address"
+//           autoCapitalize="none"
+//           value={email}
+//           onChangeText={setEmail}
+//         />
+//         <TouchableOpacity style={styles.button} onPress={handleSendOTP} disabled={loading}>
+//           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
+//         </TouchableOpacity>
+//       </View>
+//     );
+//   }
+  
+//   const styles = StyleSheet.create({
+//       container: { padding: 20, flex: 1, justifyContent: 'center', backgroundColor: '#f0f8ff' },
+//       title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#0e4d92' },
+//       input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 20 },
+//       button: { backgroundColor: '#0e4d92', padding: 14, borderRadius: 10, alignItems: 'center' },
+//       buttonText: { color: '#fff', fontSize: 16 },
 // });

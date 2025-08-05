@@ -59,6 +59,9 @@ import NotificationsScreen from "./screens/NotificationsScreen";
 import SubscribeWithApple from "./screens/SubscribeWithApple";
 import SubscribeWithPaypal from "./screens/SubscribeWithPaypal";
 import CoachSettingScreen from "./screens/CoachSettingScreen";
+import RoleBasedRedirectScreen from "./screens/RoleBasedRedirectScreen";
+import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
+import AppUsageInstructionsScreen from "./screens/AppUsageInstructionsScreen";
 
 // 🔔 Push Notification Setup
 async function registerForPushNotificationsAsync() {
@@ -164,6 +167,7 @@ function AppWithNotifications({ userToken, userRole }) {
           !userToken ? "Login" : userRole === "coach" ? "CoachHome" : "MainTabs"
         }
       >
+      <Stack.Screen name="RoleRedirect" component={RoleBasedRedirectScreen} />
         <Stack.Screen name="Login" component={LoginScreen} options={{ title: i18n.t('login') }} />
         <Stack.Screen name="Signup" component={SignupScreen} options={{ title: i18n.t('signup') }} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
@@ -189,16 +193,25 @@ function AppWithNotifications({ userToken, userRole }) {
         <Stack.Screen name="CoachLiveScreen" component={CoachLiveScreen} options={{ title: i18n.t('coachLiveScreen'), headerShown: true }} />
         <Stack.Screen name="CoinsReward" component={CoinsRewardScreen} options={{ title: i18n.t('coinsReward'), headerShown: true }} />
         <Stack.Screen name="RedeemScreen" component={RedeemScreen} options={{ title: i18n.t('redeemScreen'), headerShown: true }} />
-        <Stack.Screen name="WeChatPay" component={WeChatPayScreen} options={{ title: i18n.t('weChatPay') }} />
-        <Stack.Screen name="SubwithCoins" component={SubscribeWithCoins} options={{ title: i18n.t('subWithCoins') }} />
+        <Stack.Screen name="WeChatPay" component={WeChatPayScreen} options={{ title: i18n.t('weChatPay'), headerShown: true  }} />
+        <Stack.Screen name="SubwithCoins" component={SubscribeWithCoins} options={{ title: i18n.t('subWithCoins'), headerShown: true }} />
         <Stack.Screen name="SubscriptionSuccess" component={SubscriptionSuccessScreen} options={{ title: i18n.t('subscriptionSuccess') }} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: i18n.t('forgotPassword'), headerShown: true }} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: i18n.t('resetPassword'), headerShown: true }}/>
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: i18n.t('notifications'), headerShown: true  }} />
-        <Stack.Screen name="ApplePay" component={SubscribeWithApple} options={{ title: i18n.t('applePay') }} />
-        <Stack.Screen name="PayPal" component={SubscribeWithPaypal} options={{ title: i18n.t('paypal') }} />
+        <Stack.Screen name="ApplePay" component={SubscribeWithApple} options={{ title: i18n.t('applePay'), headerShown: true }} />
+        <Stack.Screen name="PayPal" component={SubscribeWithPaypal} options={{ title: i18n.t('paypal'), headerShown: true }} />
         <Stack.Screen name="CoachSettings" component={CoachSettingScreen} options={{ title: i18n.t('settings'), headerShown: true  }} />
-
+<Stack.Screen
+  name="PrivacyPolicy"
+  component={PrivacyPolicyScreen}
+  options={{ title: i18n.t('privacyPolicy'), headerShown: true }}
+/>
+<Stack.Screen
+  name="AppInstructions"
+  component={AppUsageInstructionsScreen}
+  options={{ title: i18n.t('usageInstructions'), headerShown: true }}
+/>
       </Stack.Navigator>
     </NavigationContainer>
   );

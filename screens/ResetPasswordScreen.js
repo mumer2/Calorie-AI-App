@@ -3,76 +3,89 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   Alert,
+  StyleSheet,
+  ScrollView,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
-import i18n from '../utils/i18n';
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/Ionicons';
+import i18n from '../utils/i18n'; // ✅ Import i18n
 
 export default function ResetPasswordScreen({ route, navigation }) {
-  const { email, phone } = route.params || {};
-  const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
+  const { email, phone } = route.params;
+  const [token, setToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const isPhone = !!phone;
+
   const handleReset = async () => {
-    if (!otp.trim() || !password.trim()) {
-      return Alert.alert(i18n.t('missingFields'), i18n.t('fillAllFields'));
+    if (!token.trim() || !newPassword.trim()) {
+      Alert.alert(i18n.t('error'), i18n.t('fillAllFields'));
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert(i18n.t('error'), i18n.t('passwordMinLength'));
+      return;
     }
 
     setLoading(true);
-
     try {
       const payload = {
-        otp: otp.trim(),
-        newPassword: password.trim(),
+        token,
+        newPassword,
+        ...(isPhone ? { phone } : { email }),
       };
 
-      if (email) payload.email = email.toLowerCase();
-      else if (phone) payload.phone = phone.trim();
+      const response = await axios.post(
+        'https://backend-calorieai-app.netlify.app/.netlify/functions/setNewPassword',
+        payload
+      );
 
-      const res = await fetch('https://backend-calorieai-app.netlify.app/.netlify/functions/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        Alert.alert(i18n.t('success'), i18n.t('passwordResetSuccess'));
-        navigation.navigate('Login');
+      if (response.data?.success) {
+        Alert.alert('✅ ' + i18n.t('success'), i18n.t('passwordResetSuccess'));
+        navigation.replace('Login');
       } else {
-        Alert.alert(i18n.t('failed'), data.message || i18n.t('resetFailed'));
+        Alert.alert(i18n.t('error'), response.data?.message || i18n.t('resetFailed'));
       }
     } catch (err) {
-      Alert.alert(i18n.t('error'), i18n.t('networkError'));
+      console.error('Reset error:', err.message);
+      Alert.alert(i18n.t('error'), err.response?.data?.message || i18n.t('serverError'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{i18n.t('resetPassword')}</Text>
-      <Text style={styles.subTitle}>{i18n.t('enterOtpAndPassword')}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>🔐 {i18n.t('resetPassword')}</Text>
+      <Text style={styles.subtitle}>
+        {isPhone
+          ? `${i18n.t('resettingForPhone')}: ${phone}`
+          : `${i18n.t('resettingForEmail')}: ${email}`}
+      </Text>
 
       <TextInput
         placeholder={i18n.t('otp')}
-        style={styles.input}
         keyboardType="numeric"
-        value={otp}
-        onChangeText={setOtp}
+        value={token}
+        onChangeText={setToken}
+        style={styles.input}
+        placeholderTextColor="#888"
       />
+
       <TextInput
         placeholder={i18n.t('newPassword')}
-        style={styles.input}
         secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        value={newPassword}
+        onChangeText={setNewPassword}
+        style={styles.input}
+        placeholderTextColor="#888"
       />
+
       <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#fff" />
@@ -80,50 +93,65 @@ export default function ResetPasswordScreen({ route, navigation }) {
           <Text style={styles.buttonText}>{i18n.t('resetPassword')}</Text>
         )}
       </TouchableOpacity>
-    </View>
+
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
+        <Icon name="arrow-back" size={20} color="#555" />
+        <Text style={styles.backText}>{i18n.t('back')}</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
-    backgroundColor: '#f0f8ff',
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    backgroundColor: '#fff',
+    padding: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: 'bold',
+    color: '#2c2c4e',
+    textAlign: 'center',
     marginBottom: 10,
-    textAlign: 'center',
-    color: '#0e4d92',
   },
-  subTitle: {
-    fontSize: 14,
+  subtitle: {
     textAlign: 'center',
+    color: '#555',
     marginBottom: 20,
-    color: '#333',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
+    backgroundColor: '#eee',
+    color: '#000',
     padding: 12,
+    borderRadius: 10,
     marginBottom: 16,
-    backgroundColor: '#fff',
   },
   button: {
-    backgroundColor: '#0e4d92',
-    padding: 14,
+    backgroundColor: '#A26769',
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 16,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: {
+    color: '#555',
+    fontSize: 14,
+    marginLeft: 6,
   },
 });
+
 
 
 // import React, { useState } from 'react';

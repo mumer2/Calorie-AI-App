@@ -20,37 +20,64 @@ import { useFocusEffect } from "@react-navigation/native";
 import StepCounterScreen from "./StepCounterScreen";
 import NotificationIcon from "../components/NotificationIcon";
 import { NotificationContext } from "../contexts/NotificationContext";
-import i18n from "../utils/i18n";
 import { LanguageContext } from "../contexts/LanguageContext";
+import i18n from "../utils/i18n";
 
 const STEP_GOAL = 10000;
-const { width } = Dimensions.get("window");
 
 export default function HomeScreen({ navigation }) {
   const [name, setName] = useState("");
+  const [profileUri, setProfileUri] = useState(null);
   const [steps, setSteps] = useState(0);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSubscriptionMenu, setShowSubscriptionMenu] = useState(false);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const appState = useRef(AppState.currentState);
-  const context = useContext(NotificationContext);
-  const unreadCount = context?.unreadCount || 0;
+
+  const { unreadCount, setUnreadCount } = useContext(NotificationContext);
   const { language } = useContext(LanguageContext);
+
+  const [userId, setUserId] = useState("");
+  const [userRole, setUserRole] = useState("");
 
   useFocusEffect(
     React.useCallback(() => {
-      const fetchUserData = async () => {
-        const storedName = await AsyncStorage.getItem("userName");
-        const status = await AsyncStorage.getItem("isSubscribed");
+      const loadUserData = async () => {
+        const id = await AsyncStorage.getItem("userId");
+        const role = await AsyncStorage.getItem("userRole");
+        const sub = await AsyncStorage.getItem("isSubscribed");
+
+        if (!id || !role) return;
+
+        setUserId(id);
+        setUserRole(role);
+        setIsSubscribed(sub === "true");
+
+        const storedName = await AsyncStorage.getItem(`name_${role}_${id}`);
+        const storedImage = await AsyncStorage.getItem(`profile_${role}_${id}`);
+
         if (storedName) setName(storedName);
-        setIsSubscribed(status === "true");
+        if (storedImage) setProfileUri(storedImage);
       };
-      fetchUserData();
+
+      loadUserData();
     }, [])
   );
 
   useEffect(() => {
-    const initialize = async () => {
+    const unsubscribe = navigation.addListener("focus", async () => {
+      const unread = await AsyncStorage.getItem("unreadCount");
+      if (parseInt(unread) > 0) {
+        await AsyncStorage.setItem("unreadCount", "0");
+        setUnreadCount(0);
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    const initializeSteps = async () => {
       const today = new Date().toDateString();
       const savedDate = await AsyncStorage.getItem("step_date");
       const savedSteps = await AsyncStorage.getItem("step_count");
@@ -77,7 +104,7 @@ export default function HomeScreen({ navigation }) {
       };
     };
 
-    initialize();
+    initializeSteps();
   }, []);
 
   const handleAppStateChange = async (nextAppState) => {
@@ -136,14 +163,6 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", async () => {
-      const status = await AsyncStorage.getItem("isSubscribed");
-      setIsSubscribed(status === "true");
-    });
-    return unsubscribe;
-  }, [navigation]);
-
   const collections = [
     {
       title: i18n.t("fitnessCalculation"),
@@ -196,7 +215,18 @@ export default function HomeScreen({ navigation }) {
     <View style={{ flex: 1, backgroundColor: "#f0f8ff" }}>
       <SafeAreaView style={styles.fixedTopBarContainer}>
         <View style={styles.topBar}>
-          <Text style={styles.topBarText}>👋 {i18n.t("hi")}, {name || i18n.t("guest")}</Text>
+          <View style={styles.profileSection}>
+            <Image
+              source={
+                profileUri
+                  ? { uri: profileUri }
+                  : { uri: "https://www.gravatar.com/avatar/?d=mp" }
+              }
+              style={styles.profileImage}
+            />
+            <Text style={styles.topBarText}>{name || i18n.t("guest")}</Text>
+          </View>
+
           <View style={styles.topRightControls}>
             <NotificationIcon
               count={unreadCount}
@@ -234,7 +264,9 @@ export default function HomeScreen({ navigation }) {
         </View>
       </SafeAreaView>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 100, paddingBottom: 40 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 100, paddingBottom: 40 }}
+      >
         <StepCounterScreen />
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <Text style={styles.sectionTitle}>{i18n.t("yourFitnessJourney")}</Text>
@@ -243,7 +275,11 @@ export default function HomeScreen({ navigation }) {
               {collections.slice(start, start + 2).map((item, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[styles.card, styles.halfCard, index === 1 && { marginRight: 0 }]}
+                  style={[
+                    styles.card,
+                    styles.halfCard,
+                    index === 1 && { marginRight: 0 },
+                  ]}
                   onPress={() => handleNavigate(item.screen)}
                 >
                   <Image source={item.image} style={styles.cardImageTop} />
@@ -276,7 +312,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
-    marginTop: 2,
+  },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#ccc",
   },
   topBarText: {
     fontSize: 18,
@@ -340,9 +386,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  fullCard: {
-    alignSelf: "stretch",
-  },
   cardImageTop: {
     width: 60,
     height: 60,
@@ -355,6 +398,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
 
 
 // import React, { useState, useEffect, useRef,useContext } from "react";
